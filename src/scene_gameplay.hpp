@@ -1,5 +1,7 @@
 #pragma once
 
+#include "character.hpp"
+
 #include "ember/box2d_helpers.hpp"
 #include "ember/camera.hpp"
 #include "ember/entities.hpp"
@@ -43,4 +45,6 @@ private:
     int num_rows;
     int num_cols;
     sushi::mesh_group board_mesh;
+
+    std::vector<character> player_characters;
 };

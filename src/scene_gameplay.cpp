@@ -27,9 +27,18 @@ scene_gameplay::scene_gameplay(ember::engine& engine, ember::scene* prev)
       tiles(3*4),
       num_rows(4),
       num_cols(3),
-      board_mesh(make_board_mesh(4, 3, {1, 1}, {0, .25}, {.25, 0})) {
-    camera.height = 8; // Height of the camera viewport in world units, in this case 32 tiles
-    camera.near = -1; // Near plane of an orthographic view is away from camera, so this is actually +1 view range on Z
+      board_mesh(make_board_mesh(4, 3, {1, 1}, {0, .25}, {.25, 0})),
+      player_characters() {
+    camera.height = 9; // Height of the camera viewport in world units
+    camera.aspect_ratio = 16.f/9.f;
+    camera.pos = {-camera.height/2.f * camera.aspect_ratio, -camera.height/2.f, -50};
+
+    player_characters.push_back({
+        1,
+        1,
+        1,
+        "kagami"
+    });
 }
 
 // Scene initialization
@@ -104,6 +113,8 @@ void scene_gameplay::render() {
     // Render board
     {
         auto modelmat = glm::mat4(1);
+        modelmat = glm::translate(modelmat, {6, 3, 0});
+        modelmat = glm::scale(modelmat, {4.f/3.f, 4.f/3.f, 1});
 
         // Set matrix uniforms.
         engine->basic_shader.set_uvmat(glm::mat3(1.f));
@@ -112,6 +123,33 @@ void scene_gameplay::render() {
 
         sushi::set_texture(0, *engine->texture_cache.get("board"));
         sushi::draw_mesh(board_mesh);
+    }
+
+    auto draw_sprite = [&](glm::vec3 pos, glm::vec2 size, const std::string& name, glm::vec2 uv1, glm::vec2 uv2) {
+        auto modelmat = glm::mat4(1);
+        modelmat = glm::translate(modelmat, pos);
+        modelmat = glm::scale(modelmat, {size, 1});
+
+        auto uvmat = glm::mat3({uv2.x - uv1.x, 0, uv1.x}, {0, uv2.y - uv1.y, uv1.y}, {0, 0, 1});
+
+        // Set matrix uniforms.
+        engine->basic_shader.set_uvmat(uvmat);
+        engine->basic_shader.set_normal_mat(glm::inverseTranspose(view * modelmat));
+        engine->basic_shader.set_MVP(projview * modelmat);
+
+        sushi::set_texture(0, *engine->texture_cache.get(name));
+        sushi::draw_mesh(sprite_mesh);
+    };
+
+    // Render character sheets
+    {
+        auto loc = glm::vec3{0, 0, 1};
+
+        for (auto& c : player_characters) {
+            draw_sprite(loc, {1.75, 2.5}, "character_card", {0, 0}, {7.f/16.f, 10.f/16.f});
+            draw_sprite(loc + glm::vec3{0, 1.5, 1}, {1, 1}, c.portrait, {0, 0}, {1, 1});
+            loc.x += 4;
+        }
     }
 
     // Render entities

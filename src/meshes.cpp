@@ -8,10 +8,10 @@ auto get_sprite_mesh() -> sushi::mesh_group {
 
     mb.mesh("sprite");
 
-    auto left = -0.5f;
-    auto right = 0.5f;
-    auto bottom = -0.5f;
-    auto top = 0.5f;
+    auto left = 0.f;
+    auto right = 1.f;
+    auto bottom = 0.f;
+    auto top = 1.f;
 
     auto bottomleft = mb.vertex().position({left, bottom, 0}).texcoord({0, 1}).normal({0, 1, 0}).get();
     auto topleft = mb.vertex().position({left, top, 0}).texcoord({0, 0}).normal({0, 1, 0}).get();

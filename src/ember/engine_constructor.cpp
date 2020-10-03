@@ -135,7 +135,7 @@ engine::engine(const config::config& config) {
             glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, white);
             return tex;
         } else {
-            auto tex = sushi::load_texture_2d("data/textures/" + name + ".png", true, false, true, false);
+            auto tex = sushi::load_texture_2d("data/textures/" + name + ".png", false, false, false, false);
             if (tex.handle) {
                 return tex;
             } else {

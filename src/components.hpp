@@ -1,5 +1,7 @@
 #pragma once
 
+#include "character.hpp"
+
 #include "ember/component_common.hpp"
 #include "ember/entities.hpp"
 #include "ember/net_id.hpp"
@@ -36,6 +38,11 @@ struct sprite {
     float time = 0;
 };
 REFLECT(sprite, (texture)(size)(frames)(time))
+
+struct character_ref {
+    character* c = nullptr;
+};
+REFLECT(character_ref, (c))
 
 } // namespace component
 

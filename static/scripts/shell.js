@@ -61,7 +61,7 @@ var Module = {
     })(),
     scaleCanvas: function () {
         if ('running' in Module.canvas.dataset) {
-            var r = 800/600;
+            var r = 16/9;
             var w = window.innerWidth;
             var h = window.innerHeight;
             if (w/h > r) {
