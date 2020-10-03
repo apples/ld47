@@ -5,6 +5,8 @@
 #include "ember/entities.hpp"
 #include "ember/scene.hpp"
 
+#include "movement.hpp"
+
 #include <sushi/sushi.hpp>
 #include <sol.hpp>
 
@@ -42,4 +44,6 @@ private:
     std::vector<board_tile> tiles;
     int num_rows;
     int num_cols;
+
+    std::vector<movement_card> movement_cards;
 };

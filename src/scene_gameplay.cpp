@@ -24,9 +24,18 @@ scene_gameplay::scene_gameplay(ember::engine& engine, ember::scene* prev)
       sprite_mesh{get_sprite_mesh()},       // Sprite and tilemap meshes is created statically
       tiles(3*4),
       num_rows(4),
-      num_cols(3) {
+      num_cols(3),
+      movement_cards(load_movement_cards()) {
     camera.height = 32; // Height of the camera viewport in world units, in this case 32 tiles
     camera.near = -1; // Near plane of an orthographic view is away from camera, so this is actually +1 view range on Z
+
+    for (const auto& movement_card : movement_cards) {
+        std::cout << movement_card.name << "\n";
+        for (const auto& movement : movement_card.movements) {
+            std::cout << "  " << movement.x << "\t" << movement.y << "\n";
+        }
+        std::cout << std::endl;
+    }
 }
 
 // Scene initialization
