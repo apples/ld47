@@ -19,9 +19,6 @@
 
 namespace component {
 
-using tag_brick_breaker = ginseng::tag<struct tag_brick_breaker_t>;
-REFLECT(tag_brick_breaker)
-
 /** Actor script used for various events */
 struct script {
     std::string name; /** Script name within the 'actors.' namespace */
@@ -39,18 +36,6 @@ struct sprite {
     float time = 0;
 };
 REFLECT(sprite, (texture)(size)(frames)(time))
-
-struct rigid_body {
-    b2Body* body;
-};
-REFLECT(rigid_body, (body))
-
-struct controller {
-    bool left = false;
-    bool right = false;
-    bool action_pressed = false;
-};
-REFLECT(controller, (left)(right)(action_pressed))
 
 } // namespace component
 

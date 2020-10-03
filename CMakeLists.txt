@@ -82,7 +82,7 @@ if(EMSCRIPTEN)
     endif()
     add_custom_command(
         OUTPUT ${EMBER_DATA_FILE} ${EMBER_DATA_LOADER}
-        COMMAND "${PYTHON_EXECUTABLE}"
+        COMMAND "${Python_EXECUTABLE}"
             "${FILE_PACKAGER}"
             "${EMBER_DATA_FILE}"
             --preload ${EMBER_DATA_PRELOAD_DIRS}
@@ -114,7 +114,7 @@ if(EMSCRIPTEN)
     string(CONCAT EMBER_LINK_FLAGS_DEBUG
         " -g4"
         " -s ASSERTIONS=1"
-        " --source-map-base file://${CMAKE_BINARY_DIR}/")
+        " --source-map-base \"file://${CMAKE_BINARY_DIR}/\"")
     set_target_properties(ember_game PROPERTIES
         SUFFIX .js
         COMPILE_FLAGS "${EMBER_COMPILE_FLAGS}"

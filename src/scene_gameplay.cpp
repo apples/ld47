@@ -4,7 +4,6 @@
 #include "components.hpp"
 #include "meshes.hpp"
 
-#include "ember/box2d_helpers.hpp"
 #include "ember/camera.hpp"
 #include "ember/engine.hpp"
 #include "ember/vdom.hpp"
@@ -19,18 +18,12 @@
 // Scene is not actually the current scene yet, so interactions with the engine state and rendering are forbidden.
 scene_gameplay::scene_gameplay(ember::engine& engine, ember::scene* prev)
     : scene(engine),
-      camera(), // Camera has a sane default constructor, it is tweaked below
-      entities(), // Entity database has no constructor parameters
-      world({0, 0}), // Physics system
-      world_contact_listener(*this), // Physics contact listener
-      timestep(), // Fixed timestep
+      camera(),                             // Camera has a sane default constructor, it is tweaked below
+      entities(),                           // Entity database has no constructor parameters
       gui_state{engine.lua.create_table()}, // Gui state is initialized to an empty Lua table
-      sprite_mesh{get_sprite_mesh()}, // Sprite and tilemap meshes is created statically
-      tilemap_mesh{get_tilemap_mesh()},
-      lives(3) {
+      sprite_mesh{get_sprite_mesh()} {      // Sprite and tilemap meshes is created statically
     camera.height = 32; // Height of the camera viewport in world units, in this case 32 tiles
     camera.near = -1; // Near plane of an orthographic view is away from camera, so this is actually +1 view range on Z
-    world.SetContactListener(&world_contact_listener);
 }
 
 // Scene initialization
@@ -38,19 +31,8 @@ scene_gameplay::scene_gameplay(ember::engine& engine, ember::scene* prev)
 // Used to initialize Lua state, initialize world, populate entities, etc.
 // Basically "load the stage".
 void scene_gameplay::init() {
-    // Initialize Box2D to be available for Lua. This is idempotent, so we can run it every init.
-    ember::box2d_lua_enable(engine->lua);
-
     // We want scripts to have access to the entities and other things as a global variables, so they are set here.
     engine->lua["entities"] = std::ref(entities);
-    engine->lua["world"] = std::ref(world);
-    engine->lua["lose_life"] = [this]{
-        if (lives == 0) {
-            engine->queue_transition<scene_mainmenu>();
-        } else {
-            lives -= 1;
-        }
-    };
     engine->lua["queue_destroy"] = [this](ember::database::ent_id eid) {
         destroy_queue.push_back(eid);
     };
@@ -64,10 +46,6 @@ void scene_gameplay::init() {
 // Updates gui_state as necessary.
 // Basically does everything except rendering.
 void scene_gameplay::tick(float delta) {
-    gui_state["health"] = lives;
-    gui_state["max_health"] = 3;
-    gui_state["score"] = 0;
-
     // Scripting system
     engine->call_script("systems.scripting", "visit", delta);
 
@@ -76,24 +54,12 @@ void scene_gameplay::tick(float delta) {
         sprite.time += delta;
     });
 
-    // Physics system
-    if (timestep.step(world, delta)) {
-        entities.visit([](const component::rigid_body& body, component::transform& transform) {
-            auto t = body.body->GetTransform();
-            transform.pos = {t.p.x, t.p.y, 0};
-            transform.rot = glm::angleAxis(t.q.GetAngle(), glm::vec3{0, 0, 1});
-        });
-    }
-
     // Dead entity cleanup
     std::sort(begin(destroy_queue), end(destroy_queue), [](auto& a, auto& b) {
         return a.get_index() < b.get_index();
     });
     destroy_queue.erase(std::unique(begin(destroy_queue), end(destroy_queue)), end(destroy_queue));
     for (const auto& eid : destroy_queue) {
-        if (auto rb = entities.get_component<component::rigid_body*>(eid)) {
-            world.DestroyBody(rb->body);
-        }
         entities.destroy_entity(eid);
     }
     destroy_queue.clear();
@@ -125,18 +91,6 @@ void scene_gameplay::render() {
     auto proj = get_proj(camera);
     auto view = get_view(camera);
 
-    // Render tilemap
-    {
-        auto modelmat = glm::mat4(1.f);
-
-        engine->basic_shader.set_uvmat(glm::mat3{1.f});
-        engine->basic_shader.set_normal_mat(glm::inverseTranspose(view * modelmat));
-        engine->basic_shader.set_MVP(proj * view * modelmat);
-
-        sushi::set_texture(0, *engine->texture_cache.get("sprites"));
-        sushi::draw_mesh(tilemap_mesh);
-    }
-
     // Render entities
     entities.visit([&](const component::sprite& sprite, const component::transform& transform) {
         auto modelmat = to_mat4(transform);
@@ -167,29 +121,29 @@ void scene_gameplay::render() {
 
 // Handle input events, called asynchronously
 auto scene_gameplay::handle_game_input(const SDL_Event& event) -> bool {
-    using component::controller;
+    // using component::controller;
 
     // Updates a single key for all controllers
-    auto update = [&](bool press, bool controller::*key, bool controller::*pressed) {
-        entities.visit([&](controller& con) {
-            if (key) con.*key = press;
-            if (pressed) con.*pressed = press;
-        });
-    };
+    // auto update = [&](bool press, bool controller::*key, bool controller::*pressed) {
+    //     entities.visit([&](controller& con) {
+    //         if (key) con.*key = press;
+    //         if (pressed) con.*pressed = press;
+    //     });
+    // };
 
     // Processes a key event
     auto process_key = [&](const SDL_KeyboardEvent& key){
         auto pressed = key.state == SDL_PRESSED;
         switch (key.keysym.sym) {
-            case SDLK_LEFT:
-                update(pressed, &controller::left, nullptr);
-                return true;
-            case SDLK_RIGHT:
-                update(pressed, &controller::right, nullptr);
-                return true;
-            case SDLK_SPACE:
-                update(pressed, nullptr, &controller::action_pressed);
-                return true;
+            // case SDLK_LEFT:
+            //     update(pressed, &controller::left, nullptr);
+            //     return true;
+            // case SDLK_RIGHT:
+            //     update(pressed, &controller::right, nullptr);
+            //     return true;
+            // case SDLK_SPACE:
+            //     update(pressed, nullptr, &controller::action_pressed);
+            //     return true;
             default:
                 return false;
         }
@@ -206,28 +160,4 @@ auto scene_gameplay::handle_game_input(const SDL_Event& event) -> bool {
 // Render GUI, which means returning the result of `create_element`.
 auto scene_gameplay::render_gui() -> sol::table {
     return ember::vdom::create_element(engine->lua, "gui.scene_gameplay.root", gui_state, engine->lua.create_table());
-}
-
-// Contact listener constructor simply stores a reference to the scene.
-scene_gameplay::contact_listener::contact_listener(scene_gameplay& scene) : scene(&scene) {}
-
-// Called after a collision has been processed by the physics engine.
-void scene_gameplay::contact_listener::PostSolve(b2Contact* contact, const b2ContactImpulse* impulse) {
-    // Get the physics bodys associated with the two colliding fixtures.
-    auto bodyA = contact->GetFixtureA()->GetBody();
-    auto bodyB = contact->GetFixtureB()->GetBody();
-
-    // Extract the ent_ids which are stored in the bodys' userData.
-    auto entA = scene->entities.from_ptr(bodyA->GetUserData());
-    auto entB = scene->entities.from_ptr(bodyB->GetUserData());
-
-    // Try to call the first entity's collision handler.
-    if (auto scriptA = scene->entities.get_component<component::script*>(entA)) {
-        scene->engine->call_script("systems.physics", "post_collide", "actors." + scriptA->name, entA, entB);
-    }
-
-    // Try to call the second entity's collision handler.
-    if (auto scriptB = scene->entities.get_component<component::script*>(entB)) {
-        scene->engine->call_script("systems.physics", "post_collide", "actors." + scriptB->name, entB, entA);
-    }
 }
