@@ -24,6 +24,14 @@ struct board_tile {
     std::optional<ember::database::ent_id> occupant;
 };
 
+struct movement_card_item {
+    movement_card* data;
+    glm::vec2 pos;
+    glm::vec2 size;
+    bool visible;
+    bool pickable;
+};
+
 class scene_gameplay final : public ember::scene {
 public:
     scene_gameplay(ember::engine& eng, scene* prev);
@@ -52,5 +60,6 @@ private:
 
     std::vector<movement_card> movement_cards;
 
-    std::vector<movement_card*> available_movement_cards;
+    std::vector<movement_card_item> available_movement_cards;
+    movement_card_item* picked_card;
 };

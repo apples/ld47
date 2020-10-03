@@ -30,7 +30,8 @@ scene_gameplay::scene_gameplay(ember::engine& engine, ember::scene* prev)
       board_mesh(make_board_mesh(4, 3, {1, 1}, {0, .25}, {.25, 0})),
       player_characters(),
       movement_cards(load_movement_cards()),
-      available_movement_cards() {
+      available_movement_cards(),
+      picked_card(nullptr) {
     camera.height = 9; // Height of the camera viewport in world units
     camera.aspect_ratio = 16.f/9.f;
     camera.pos = {-camera.height/2.f * camera.aspect_ratio, -camera.height/2.f, -50};
@@ -50,8 +51,25 @@ scene_gameplay::scene_gameplay(ember::engine& engine, ember::scene* prev)
         std::cout << std::endl;
     }
 
-    for (auto& c : movement_cards) {
-        available_movement_cards.push_back(&c);
+    {
+        auto loc = glm::vec2{11, 3};
+
+        for (auto& c : movement_cards) {
+            available_movement_cards.push_back({
+                &c,
+                loc,
+                {65.f/64.f, 86.f/64.f},
+                true,
+                true,
+            });
+
+            loc.x += 1.5;
+
+            if (loc.x >= 15.5) {
+                loc.x = 11;
+                loc.y += 2;
+            }
+        }
     }
 }
 
@@ -111,6 +129,12 @@ void scene_gameplay::render() {
     //glEnable(GL_SAMPLE_COVERAGE);
     //glEnable(GL_SAMPLE_ALPHA_TO_COVERAGE);
 
+    // Mouse pos
+    int mx, my;
+    SDL_GetMouseState(&mx, &my);
+
+    auto mouse = glm::vec2{16.f * mx / float(engine->display.width), 9.f * (1.f - my / float(engine->display.height))};
+
     // Bind the basic shader and set some defaults.
     engine->basic_shader.bind();
     engine->basic_shader.set_cam_forward(get_forward(camera));
@@ -157,7 +181,7 @@ void scene_gameplay::render() {
 
     // Render character sheets
     {
-        auto loc = glm::vec3{0, 0, 1};
+        auto loc = glm::vec3{4, 0, 1};
 
         for (auto& c : player_characters) {
             draw_sprite(loc, {1.75, 2.5}, "character_card", {0, 0}, {7.f/16.f, 10.f/16.f});
@@ -168,30 +192,27 @@ void scene_gameplay::render() {
 
     // Render movement cards
     {
-        auto loc = glm::vec3{11, 3, 1};
-
         for (auto& c : available_movement_cards) {
-            draw_sprite(loc, {65.f/64.f, 86.f/64.f}, "character_card", {0.f, 170.f/256.f}, {65.f/256.f, 1.f});
+            auto loc = glm::vec3{c.pos, 1};
 
-            auto pos = loc + glm::vec3{23.f/64.f, 2.f/64.f, 2};
+            if (&c == picked_card) {
+                loc = glm::vec3{mouse - glm::vec2{0.5f, 2.f/3.f}, 1};
+            }
+
+            draw_sprite(loc, c.size, "character_card", {0.f, 170.f/256.f}, {65.f/256.f, 1.f});
+
+            auto pos = loc + glm::vec3{23.f/64.f, 2.f/64.f, 1};
             auto offs = glm::vec3{19.f/64.f, 19.f/64.f, 0};
 
             auto uv1 = glm::vec2{0.5f, 0.25f};
             auto uvd = glm::vec2{0.125f, 0.125f};
 
-            for (auto& m : c->movements) {
+            for (auto& m : c.data->movements) {
                 pos += offs * glm::vec3{m.x, m.y, 1};
 
                 draw_sprite(pos, {0.5f, 0.5f}, "character_card", uv1, uv1 + uvd);
 
                 uv1.y = 0.375f;
-            }
-
-            loc.x += 1.5;
-
-            if (loc.x >= 15.5) {
-                loc.x = 11;
-                loc.y += 2;
             }
         }
     }
@@ -254,10 +275,36 @@ auto scene_gameplay::handle_game_input(const SDL_Event& event) -> bool {
         }
     };
 
+    auto process_mouse_down = [&](const SDL_MouseButtonEvent& button) {
+        auto screenpos =
+            glm::vec2{button.x / float(engine->display.width), 1.f - button.y / float(engine->display.height)};
+        
+        auto p = screenpos * glm::vec2{16.f, 9.f};
+        
+        for (auto& c : available_movement_cards) {
+            if (c.pickable && p.x >= c.pos.x && p.x <= c.pos.x + c.size.x && p.y >= c.pos.y && p.y <= c.pos.y + c.size.y) {
+                picked_card = &c;
+                return true;
+            }
+        }
+
+        return false;
+    };
+
+    auto process_mouse_up = [&](const SDL_MouseButtonEvent& button) {
+        picked_card = nullptr;
+
+        return true;
+    };
+
     switch (event.type) {
         case SDL_KEYDOWN:
         case SDL_KEYUP:
             return process_key(event.key);
+        case SDL_MOUSEBUTTONDOWN:
+            return process_mouse_down(event.button);
+        case SDL_MOUSEBUTTONUP:
+            return process_mouse_up(event.button);
     }
     return false;
 }
