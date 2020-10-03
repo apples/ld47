@@ -37,10 +37,14 @@ scene_gameplay::scene_gameplay(ember::engine& engine, ember::scene* prev)
     camera.pos = {-camera.height/2.f * camera.aspect_ratio, -camera.height/2.f, -50};
 
     player_characters.push_back({
-        1,
-        1,
-        1,
-        "kagami"
+        {
+            1,
+            1,
+            1,
+            "kagami",
+        },
+        {4, 0},
+        {1.75, 2.5},
     });
 
     {
@@ -173,12 +177,9 @@ void scene_gameplay::render() {
 
     // Render character sheets
     {
-        auto loc = glm::vec3{4, 0, 1};
-
         for (auto& c : player_characters) {
-            draw_sprite(loc, {1.75, 2.5}, "character_card", {0, 0}, {7.f/16.f, 10.f/16.f});
-            draw_sprite(loc + glm::vec3{0, 1.5, 1}, {1, 1}, c.portrait, {0, 0}, {1, 1});
-            loc.x += 4;
+            draw_sprite({c.pos, 1}, c.size, "character_card", {0, 0}, {7.f/16.f, 10.f/16.f});
+            draw_sprite({c.pos + glm::vec2{0, 1.5}, 2}, {1, 1}, c.base.portrait, {0, 0}, {1, 1});
         }
     }
 

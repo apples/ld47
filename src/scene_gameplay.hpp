@@ -32,6 +32,12 @@ struct movement_card_item {
     bool pickable;
 };
 
+struct player_character_card {
+    character base;
+    glm::vec2 pos;
+    glm::vec2 size;
+};
+
 class scene_gameplay final : public ember::scene {
 public:
     scene_gameplay(ember::engine& eng, scene* prev);
@@ -56,7 +62,7 @@ private:
     int num_cols;
     sushi::mesh_group board_mesh;
 
-    std::vector<character> player_characters;
+    std::vector<player_character_card> player_characters;
 
     std::vector<movement_card> movement_cards;
 

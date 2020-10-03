@@ -1,6 +1,7 @@
 #pragma once
 
 #include "character.hpp"
+#include "movement.hpp"
 
 #include "ember/component_common.hpp"
 #include "ember/entities.hpp"
@@ -41,8 +42,9 @@ REFLECT(sprite, (texture)(size)(frames)(time))
 
 struct character_ref {
     character* c = nullptr;
+    movement* m = nullptr;
 };
-REFLECT(character_ref, (c))
+REFLECT(character_ref, (c)(m))
 
 } // namespace component
 
