@@ -21,7 +21,10 @@ scene_gameplay::scene_gameplay(ember::engine& engine, ember::scene* prev)
       camera(),                             // Camera has a sane default constructor, it is tweaked below
       entities(),                           // Entity database has no constructor parameters
       gui_state{engine.lua.create_table()}, // Gui state is initialized to an empty Lua table
-      sprite_mesh{get_sprite_mesh()} {      // Sprite and tilemap meshes is created statically
+      sprite_mesh{get_sprite_mesh()},       // Sprite and tilemap meshes is created statically
+      tiles(3*4),
+      num_rows(4),
+      num_cols(3) {
     camera.height = 32; // Height of the camera viewport in world units, in this case 32 tiles
     camera.near = -1; // Near plane of an orthographic view is away from camera, so this is actually +1 view range on Z
 }
@@ -36,6 +39,8 @@ void scene_gameplay::init() {
     engine->lua["queue_destroy"] = [this](ember::database::ent_id eid) {
         destroy_queue.push_back(eid);
     };
+
+    engine->lua["tile_at"] = [this](int r, int c) { return std::ref(tile_at(r, c)); };
 
     // Call the "init" function in the "data/scripts/scenes/gameplay.lua" script, with no params.
     engine->call_script("scenes.gameplay", "init");
@@ -160,4 +165,8 @@ auto scene_gameplay::handle_game_input(const SDL_Event& event) -> bool {
 // Render GUI, which means returning the result of `create_element`.
 auto scene_gameplay::render_gui() -> sol::table {
     return ember::vdom::create_element(engine->lua, "gui.scene_gameplay.root", gui_state, engine->lua.create_table());
+}
+
+board_tile& scene_gameplay::tile_at(int r, int c) {
+    return tiles[r * num_cols + c];
 }
