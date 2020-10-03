@@ -43,14 +43,6 @@ scene_gameplay::scene_gameplay(ember::engine& engine, ember::scene* prev)
         "kagami"
     });
 
-    for (const auto& movement_card : movement_cards) {
-        std::cout << movement_card.name << "\n";
-        for (const auto& movement : movement_card.movements) {
-            std::cout << "  " << movement.x << "\t" << movement.y << "\n";
-        }
-        std::cout << std::endl;
-    }
-
     {
         auto loc = glm::vec2{11, 3};
 
