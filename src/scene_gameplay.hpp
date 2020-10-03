@@ -7,6 +7,8 @@
 #include "ember/entities.hpp"
 #include "ember/scene.hpp"
 
+#include "movement.hpp"
+
 #include <sushi/sushi.hpp>
 #include <sol.hpp>
 
@@ -47,4 +49,6 @@ private:
     sushi::mesh_group board_mesh;
 
     std::vector<character> player_characters;
+
+    std::vector<movement_card> movement_cards;
 };

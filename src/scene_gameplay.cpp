@@ -28,7 +28,8 @@ scene_gameplay::scene_gameplay(ember::engine& engine, ember::scene* prev)
       num_rows(4),
       num_cols(3),
       board_mesh(make_board_mesh(4, 3, {1, 1}, {0, .25}, {.25, 0})),
-      player_characters() {
+      player_characters(),
+      movement_cards(load_movement_cards()) {
     camera.height = 9; // Height of the camera viewport in world units
     camera.aspect_ratio = 16.f/9.f;
     camera.pos = {-camera.height/2.f * camera.aspect_ratio, -camera.height/2.f, -50};
@@ -39,6 +40,14 @@ scene_gameplay::scene_gameplay(ember::engine& engine, ember::scene* prev)
         1,
         "kagami"
     });
+
+    for (const auto& movement_card : movement_cards) {
+        std::cout << movement_card.name << "\n";
+        for (const auto& movement : movement_card.movements) {
+            std::cout << "  " << movement.x << "\t" << movement.y << "\n";
+        }
+        std::cout << std::endl;
+    }
 }
 
 // Scene initialization
