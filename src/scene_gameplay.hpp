@@ -42,4 +42,5 @@ private:
     std::vector<board_tile> tiles;
     int num_rows;
     int num_cols;
+    sushi::mesh_group board_mesh;
 };

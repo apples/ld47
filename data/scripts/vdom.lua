@@ -198,6 +198,10 @@ local function instantiate(element, parent_widget, context_provider)
         local child_element = element.type(element.props)
         clear_current_instance()
 
+        if child_element == nil then
+            return nil
+        end
+
         local child_instance = instantiate(child_element, parent_widget, get_context_provider(instance))
 
         instance.widget = child_instance.widget
@@ -297,10 +301,17 @@ reconcile = function (parent_widget, instance, element, context_provider)
 
         local new_instance = instantiate(element, parent_widget, get_context_provider(instance))
 
-        parent_widget:replace_child(instance.widget, new_instance.widget)
-        cleanup(instance)
+        if new_instance ~= nil then
+            parent_widget:replace_child(instance.widget, new_instance.widget)
+            cleanup(instance)
 
-        return new_instance
+            return new_instance
+        else
+            parent_widget:remove_child(instance.widget)
+            cleanup(instance)
+
+            return nil
+        end
     elseif type(element.type) == 'string' then
         -- Update instance
 
