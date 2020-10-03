@@ -29,7 +29,8 @@ scene_gameplay::scene_gameplay(ember::engine& engine, ember::scene* prev)
       num_cols(3),
       board_mesh(make_board_mesh(4, 3, {1, 1}, {0, .25}, {.25, 0})),
       player_characters(),
-      movement_cards(load_movement_cards()) {
+      movement_cards(load_movement_cards()),
+      available_movement_cards() {
     camera.height = 9; // Height of the camera viewport in world units
     camera.aspect_ratio = 16.f/9.f;
     camera.pos = {-camera.height/2.f * camera.aspect_ratio, -camera.height/2.f, -50};
@@ -47,6 +48,10 @@ scene_gameplay::scene_gameplay(ember::engine& engine, ember::scene* prev)
             std::cout << "  " << movement.x << "\t" << movement.y << "\n";
         }
         std::cout << std::endl;
+    }
+
+    for (auto& c : movement_cards) {
+        available_movement_cards.push_back(&c);
     }
 }
 
@@ -139,7 +144,7 @@ void scene_gameplay::render() {
         modelmat = glm::translate(modelmat, pos);
         modelmat = glm::scale(modelmat, {size, 1});
 
-        auto uvmat = glm::mat3({uv2.x - uv1.x, 0, uv1.x}, {0, uv2.y - uv1.y, uv1.y}, {0, 0, 1});
+        auto uvmat = glm::mat3({uv2.x - uv1.x, 0, 0}, {0, uv2.y - uv1.y, 0}, {uv1.x, uv1.y, 1});
 
         // Set matrix uniforms.
         engine->basic_shader.set_uvmat(uvmat);
@@ -158,6 +163,36 @@ void scene_gameplay::render() {
             draw_sprite(loc, {1.75, 2.5}, "character_card", {0, 0}, {7.f/16.f, 10.f/16.f});
             draw_sprite(loc + glm::vec3{0, 1.5, 1}, {1, 1}, c.portrait, {0, 0}, {1, 1});
             loc.x += 4;
+        }
+    }
+
+    // Render movement cards
+    {
+        auto loc = glm::vec3{11, 3, 1};
+
+        for (auto& c : available_movement_cards) {
+            draw_sprite(loc, {65.f/64.f, 86.f/64.f}, "character_card", {0.f, 170.f/256.f}, {65.f/256.f, 1.f});
+
+            auto pos = loc + glm::vec3{23.f/64.f, 2.f/64.f, 2};
+            auto offs = glm::vec3{19.f/64.f, 19.f/64.f, 0};
+
+            auto uv1 = glm::vec2{0.5f, 0.25f};
+            auto uvd = glm::vec2{0.125f, 0.125f};
+
+            for (auto& m : c->movements) {
+                pos += offs * glm::vec3{m.x, m.y, 1};
+
+                draw_sprite(pos, {0.5f, 0.5f}, "character_card", uv1, uv1 + uvd);
+
+                uv1.y = 0.375f;
+            }
+
+            loc.x += 1.5;
+
+            if (loc.x >= 15.5) {
+                loc.x = 11;
+                loc.y += 2;
+            }
         }
     }
 

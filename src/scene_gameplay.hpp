@@ -51,4 +51,6 @@ private:
     std::vector<character> player_characters;
 
     std::vector<movement_card> movement_cards;
+
+    std::vector<movement_card*> available_movement_cards;
 };
