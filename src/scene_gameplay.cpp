@@ -469,7 +469,11 @@ void scene_gameplay::render() {
 
             // Render movement card
             if (is_in(mouse, transform.pos, {1, 1})) {
-                render_movement_card(transform.pos + glm::vec3{1, 1, 1}, glm::vec2{65.f / 64.f, 86.f / 64.f}, *cref->m);
+                auto pos = transform.pos + glm::vec3{1, 1, 1};
+                if (pos.y > 9.f - 86.f/64.f) {
+                    pos.y = 9.f - 86.f/64.f;
+                }
+                render_movement_card(pos, glm::vec2{65.f / 64.f, 86.f / 64.f}, *cref->m);
             }
         }
     });
