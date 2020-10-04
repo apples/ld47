@@ -65,9 +65,11 @@ public:
 
     board_tile& tile_at(int r, int c);
 
-    void next_turn();
+    void next_turn(bool force = false);
 
     auto spawn_entity(int r, int c) -> spawn_result;
+
+    void move_units();
 
 private:
     ember::camera::orthographic camera;

@@ -33,7 +33,8 @@ scene_gameplay::scene_gameplay(ember::engine& engine, ember::scene* prev)
       player_characters(),
       movement_cards(load_movement_cards()),
       available_movement_cards(),
-      picked_card(nullptr) {
+      picked_card(nullptr),
+      current_turn(turn::SET_ACTIONS) {
     camera.height = 9; // Height of the camera viewport in world units
     camera.aspect_ratio = 16.f/9.f;
     camera.pos = {-camera.height/2.f * camera.aspect_ratio, -camera.height/2.f, -50};
@@ -101,7 +102,7 @@ void scene_gameplay::init() {
     engine->call_script("scenes.gameplay", "init");
 
     // Spawn test entity
-    auto [eid, cref, sref] = spawn_entity(0, 1);
+    auto [eid, cref, sref] = spawn_entity(0, 0);
     cref->c = &player_characters[0].base;
     cref->m = available_movement_cards[0].data;
     sref->texture = "kagami";
@@ -284,8 +285,11 @@ auto scene_gameplay::handle_game_input(const SDL_Event& event) -> bool {
             //     update(pressed, &controller::right, nullptr);
             //     return true;
             case SDLK_SPACE:
-                next_turn();
-                return true;
+                if (pressed && key.repeat == 0) {
+                    next_turn();
+                    return true;
+                }
+                return false;
             default:
                 return false;
         }
@@ -352,8 +356,18 @@ board_tile& scene_gameplay::tile_at(int r, int c) {
     return tiles[r * num_cols + c];
 }
 
-void scene_gameplay::next_turn() {
-    // TODO
+void scene_gameplay::next_turn(bool force) {
+    switch (current_turn) {
+        case turn::SET_ACTIONS:
+            current_turn = turn::AUTOPLAYER;
+            move_units();
+            break;
+        case turn::AUTOPLAYER:
+            if (force) {
+                current_turn = turn::SET_ACTIONS;
+            }
+            break;
+    }
 }
 
 auto scene_gameplay::spawn_entity(int r, int c) -> spawn_result {
@@ -370,9 +384,73 @@ auto scene_gameplay::spawn_entity(int r, int c) -> spawn_result {
     auto sid = entities.add_component(eid, sprite);
     auto cid = entities.add_component(eid, character_ref);
 
+    tile_at(r, c).occupant = eid;
+
     return {
         eid,
         &entities.get_component_by_id<component::character_ref>(cid),
         &entities.get_component_by_id<component::sprite>(sid),
     };
+}
+
+void scene_gameplay::move_units() {
+    struct unit {
+        ember::database::ent_id eid;
+        component::character_ref* cref;
+        component::transform* tform;
+    };
+
+    // Deferred units will repeatedly try to move until they succeed or a deadlock occurs
+    std::vector<unit> deferred;
+    deferred.reserve(entities.count_components<component::character_ref>());
+
+    auto try_move = [&](const unit& u) {
+        auto next_index = (u.cref->move_index + 1) % u.cref->m->movements.size();
+
+        auto& offs = u.cref->m->movements[next_index];
+
+        auto next_pos = *u.cref->board_pos + glm::ivec2{offs.x, offs.y};
+
+        auto& cur_tile = tile_at(u.cref->board_pos->y, u.cref->board_pos->x);
+        auto& next_tile = tile_at(next_pos.y, next_pos.x);
+
+        // Check collision
+        if (next_tile.occupant) {
+            return false;
+        }
+
+        // Actually move the unit
+        cur_tile.occupant = std::nullopt;
+        next_tile.occupant = u.eid;
+        u.cref->board_pos = next_pos;
+        u.cref->move_index = next_index;
+        u.tform->pos = {next_tile.center - glm::vec2{0.5, 0.5}, 1};
+
+        return true;
+    };
+
+    // Initial moves
+    entities.visit([&](ember::database::ent_id eid, component::character_ref& cref, component::transform& tform) {
+        if (!try_move({eid, &cref, &tform})) {
+            deferred.push_back({eid, &cref, &tform});
+        }
+    });
+
+    // Move deferred until no more possible moves
+    auto last_sz = deferred.size();
+    while (last_sz > 0) {
+        auto nd = std::move(deferred);
+        for (auto& u : nd) {
+            if (!try_move(u)) {
+                deferred.push_back(u);
+            }
+        }
+        // Check for deadlock
+        if (last_sz == deferred.size()) {
+            break;
+        }
+        last_sz = deferred.size();
+    }
+
+    next_turn(true);
 }

@@ -51,6 +51,7 @@ struct character_ref {
     movement_card* m = nullptr;
     std::optional<glm::ivec2> board_pos;
     action a = PLAY;
+    int move_index = 0;
 };
 REFLECT(character_ref, (c)(m)(board_pos)(a))
 
