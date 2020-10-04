@@ -12,6 +12,7 @@
 
 #include <glm/gtc/matrix_inverse.hpp>
 #include <glm/gtx/matrix_transform_2d.hpp>
+#include <glm/gtx/vector_angle.hpp>
 
 #include <sushi/sushi.hpp>
 
@@ -308,6 +309,31 @@ void scene_gameplay::render() {
         }
     }
 
+    auto render_line =
+        [&](glm::vec3 a, glm::vec3 b, float thiccness) {
+            auto dir = b-a;
+            auto len = glm::length(dir);
+            auto angle = glm::orientedAngle(glm::vec3{0, 1, 0}, glm::normalize(dir), glm::vec3{0, 0, 1});
+
+            auto modelmat = glm::mat4(1);
+            modelmat = glm::translate(modelmat, a);
+            modelmat = glm::rotate(modelmat, angle, {0, 0, 1});
+            modelmat = glm::scale(modelmat, {thiccness, len, 1});
+            modelmat = glm::translate(modelmat, {-0.5, 0, 0});
+
+            auto uv1 = glm::vec2{0.75, 0.25};
+            auto uvd = glm::vec2{3.f/256.f, 13.f/256.f};
+            auto uvmat = glm::mat3({uvd.x, 0, 0}, {0, uvd.y, 0}, {uv1.x, uv1.y, 1});
+
+            // Set matrix uniforms.
+            engine->basic_shader.set_uvmat(uvmat);
+            engine->basic_shader.set_normal_mat(glm::inverseTranspose(view * modelmat));
+            engine->basic_shader.set_MVP(projview * modelmat);
+
+            sushi::set_texture(0, *engine->texture_cache.get("character_card"));
+            sushi::draw_mesh(sprite_mesh);
+        };
+
     auto render_movement_card = [&](const glm::vec3& loc, const glm::vec2& size, const movement_card& c) {
         draw_sprite(loc, size, "character_card", {0.f, 170.f / 256.f}, {65.f / 256.f, 1.f});
 
@@ -317,12 +343,32 @@ void scene_gameplay::render() {
         auto uv1 = glm::vec2{0.5f, 0.25f};
         auto uvd = glm::vec2{0.125f, 0.125f};
 
+        auto line_from = std::optional<glm::vec3>(std::nullopt);
+
         for (auto& m : c.movements) {
             pos += offs * glm::vec3{m.x, m.y, 1};
 
             draw_sprite(pos, {0.5f, 0.5f}, "character_card", uv1, uv1 + uvd);
 
             uv1.y = 0.375f;
+
+            // Line
+            if (line_from) {
+                auto from = *line_from + glm::vec3{9.f/64.f, 9.f/64.f, 1.f};
+                auto to = pos + glm::vec3{9.f/64.f, 9.f/64.f, 1.f};
+
+                auto d = to - from;
+                auto nd = glm::normalize(d);
+
+                from += nd * 9.f/64.f;
+                to -= nd * 9.f/64.f;
+
+                from.z += 1;
+                to.z += 1;
+
+                render_line(from, to, 3.f/64.f);
+            }
+            line_from = pos;
         }
     };
 
