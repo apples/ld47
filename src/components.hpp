@@ -43,8 +43,9 @@ REFLECT(sprite, (texture)(size)(frames)(time))
 struct character_ref {
     character* c = nullptr;
     movement* m = nullptr;
+    std::optional<glm::ivec2> board_pos;
 };
-REFLECT(character_ref, (c)(m))
+REFLECT(character_ref, (c)(m)(board_pos))
 
 } // namespace component
 
