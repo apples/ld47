@@ -186,26 +186,28 @@ void scene_gameplay::render() {
     // Render movement cards
     {
         for (auto& c : available_movement_cards) {
-            auto loc = glm::vec3{c.pos, 1};
+            if(c.visible) {
+                auto loc = glm::vec3{c.pos, 1};
 
-            if (&c == picked_card) {
-                loc = glm::vec3{mouse - glm::vec2{0.5f, 2.f/3.f}, 1};
-            }
+                if (&c == picked_card) {
+                    loc = glm::vec3{mouse - glm::vec2{0.5f, 2.f/3.f}, 1};
+                }
 
-            draw_sprite(loc, c.size, "character_card", {0.f, 170.f/256.f}, {65.f/256.f, 1.f});
+                draw_sprite(loc, c.size, "character_card", {0.f, 170.f/256.f}, {65.f/256.f, 1.f});
 
-            auto pos = loc + glm::vec3{23.f/64.f, 2.f/64.f, 1};
-            auto offs = glm::vec3{19.f/64.f, 19.f/64.f, 0};
+                auto pos = loc + glm::vec3{23.f/64.f, 2.f/64.f, 1};
+                auto offs = glm::vec3{19.f/64.f, 19.f/64.f, 0};
 
-            auto uv1 = glm::vec2{0.5f, 0.25f};
-            auto uvd = glm::vec2{0.125f, 0.125f};
+                auto uv1 = glm::vec2{0.5f, 0.25f};
+                auto uvd = glm::vec2{0.125f, 0.125f};
 
-            for (auto& m : c.data->movements) {
-                pos += offs * glm::vec3{m.x, m.y, 1};
+                for (auto& m : c.data->movements) {
+                    pos += offs * glm::vec3{m.x, m.y, 1};
 
-                draw_sprite(pos, {0.5f, 0.5f}, "character_card", uv1, uv1 + uvd);
+                    draw_sprite(pos, {0.5f, 0.5f}, "character_card", uv1, uv1 + uvd);
 
-                uv1.y = 0.375f;
+                    uv1.y = 0.375f;
+                }
             }
         }
     }
@@ -285,6 +287,23 @@ auto scene_gameplay::handle_game_input(const SDL_Event& event) -> bool {
     };
 
     auto process_mouse_up = [&](const SDL_MouseButtonEvent& button) {
+        auto screenpos =
+            glm::vec2{button.x / float(engine->display.width), 1.f - button.y / float(engine->display.height)};
+        
+        auto p = screenpos * glm::vec2{16.f, 9.f};
+
+        if(picked_card != nullptr) {
+            for(player_character_card player : player_characters) {
+                if(player.pos.x - (0) < p.x &&
+                    player.pos.x + (player.size.x / 1) > p.x &&
+                    player.pos.y - (0) < p.y &&
+                    player.pos.y + (player.size.y / 1) > p.y ){
+
+                    (*picked_card).visible = false;
+                    std::cout << "Colision" << std::endl;
+                }
+            }
+        }
         picked_card = nullptr;
 
         return true;
