@@ -403,14 +403,14 @@ auto scene_gameplay::handle_game_input(const SDL_Event& event) -> bool {
 
         if(picked_card != nullptr) {
             auto card = *picked_card;
-            for(player_character_card player : player_characters) {
+            for (auto& player : player_characters) {
                 if(player.pos.x < p.x &&
                     player.pos.x + (player.size.x / 1) > p.x &&
                     player.pos.y < p.y &&
                     player.pos.y + (player.size.y / 1) > p.y ){
 
                     card.visible = false;
-                    auto [eid, cref, sref] = spawn_entity(card.data->movements[0].x, card.data->movements[0].y);
+                    auto [eid, cref, sref] = spawn_entity(card.data->movements[0].y, card.data->movements[0].x + 1);
                     cref->c = &player.base;
                     cref->m = card.data;
                     sref->texture = "kogamu";
