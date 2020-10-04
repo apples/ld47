@@ -271,16 +271,13 @@ void scene_gameplay::render() {
     // Render character sheets
     {
         for (auto& c : player_characters) {
-            // Card
             if (c.dead) {
                 engine->basic_shader.set_saturation(0);
                 engine->basic_shader.set_tint({0.5, 0.5, 0.5, 0.5});
             }
+
+            // Card
             draw_sprite({c.pos, 1}, c.size, "character_card", {0, 0}, {7.f/16.f, 10.f/16.f});
-            if (c.dead) {
-                engine->basic_shader.set_saturation(1);
-                engine->basic_shader.set_tint({1, 1, 1, 1});
-            }
 
             // Portrait
             if (!c.dead) {
@@ -314,6 +311,11 @@ void scene_gameplay::render() {
                 auto y = (138.f - 21*i)/64.f;
                 draw_sprite(
                     {c.pos + glm::vec2{x, y}, 2}, {0.5, 0.5}, "character_card", uv1, uv1 + glm::vec2{0.125, 0.125});
+            }
+
+            if (c.dead) {
+                engine->basic_shader.set_saturation(1);
+                engine->basic_shader.set_tint({1, 1, 1, 1});
             }
         }
     }
@@ -522,7 +524,7 @@ auto scene_gameplay::handle_game_input(const SDL_Event& event) -> bool {
         // Check card picking
         if (current_turn == turn::SUMMON) {
             for (auto& c : available_movement_cards) {
-                if (c.pickable && is_in(p, c.pos, c.size)) {
+                if (c.visible && c.pickable && is_in(p, c.pos, c.size)) {
                     picked_card = &c;
                     return true;
                 }
@@ -720,6 +722,12 @@ void scene_gameplay::move_units(bool player_controlled) {
                             auto& player_char = reinterpret_cast<player_character_card&>(*ocref->c);
                             player_char.deployed = false;
                             player_char.dead = true;
+
+                            for (auto& c : available_movement_cards) {
+                                if (c.data == ocref->m) {
+                                    c.visible = true;
+                                }
+                            }
                         }
                         entities.destroy_entity(*next_tile.occupant);
                     } else {
