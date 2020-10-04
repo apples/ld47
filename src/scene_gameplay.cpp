@@ -434,8 +434,8 @@ auto scene_gameplay::handle_game_input(const SDL_Event& event) -> bool {
         
         auto p = screenpos * glm::vec2{16.f, 9.f};
 
-        if(picked_card != nullptr) {
-            auto card = *picked_card;
+        if (current_turn == turn::SUMMON && picked_card != nullptr) {
+            auto& card = *picked_card;
             for (auto& player : player_characters) {
                 if(player.pos.x < p.x &&
                     player.pos.x + (player.size.x / 1) > p.x &&
@@ -451,6 +451,7 @@ auto scene_gameplay::handle_game_input(const SDL_Event& event) -> bool {
                         cref->player_controlled = true;
                         sref->texture = cref->c->portrait;
                         sref->frames = {0};
+                        next_turn();
                         break;
                     }
                 }
@@ -489,12 +490,6 @@ board_tile& scene_gameplay::tile_at(int r, int c) {
 
 void scene_gameplay::next_turn(bool force) {
     switch (current_turn) {
-        case turn::SUMMON:
-            for (auto& c : available_movement_cards) {
-                c.pickable = false;
-            }
-            enter_turn(turn::SET_ACTIONS);
-            break;
         case turn::SET_ACTIONS:
             enter_turn(turn::AUTOPLAYER);
             break;
@@ -503,21 +498,40 @@ void scene_gameplay::next_turn(bool force) {
                 enter_turn(turn::SUMMON);
             }
             break;
+        case turn::SUMMON:
+            for (auto& c : available_movement_cards) {
+                c.pickable = false;
+            }
+            picked_card = nullptr;
+            enter_turn(turn::ENEMY_MOVE);
+            break;
+        case turn::ENEMY_MOVE:
+            enter_turn(turn::ENEMY_SPAWN);
+            break;
+        case turn::ENEMY_SPAWN:
+            enter_turn(turn::SET_ACTIONS);
+            break;
     }
 }
 
 void scene_gameplay::enter_turn(turn t) {
     current_turn = t;
     switch (current_turn) {
+        case turn::SET_ACTIONS:
+            break;
+        case turn::AUTOPLAYER:
+            move_units(true);
+            break;
         case turn::SUMMON:
             for (auto& c : available_movement_cards) {
                 c.pickable = true;
             }
             break;
-        case turn::SET_ACTIONS:
+        case turn::ENEMY_MOVE:
+            next_turn(true);
             break;
-        case turn::AUTOPLAYER:
-            move_units(true);
+        case turn::ENEMY_SPAWN:
+            next_turn(true);
             break;
     }
 }
