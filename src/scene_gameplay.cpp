@@ -67,12 +67,15 @@ scene_gameplay::scene_gameplay(ember::engine& engine, ember::scene* prev)
                 {mh, mh, power, portrait},
                 {4 + 2 * i, 0},
                 {1.75, 2.5},
+                false,
+                false,
             });
 
             ++i;
         }
     }
 
+    // Load player movement cards
     {
         auto loc = glm::vec2{11, 3};
 
@@ -94,6 +97,7 @@ scene_gameplay::scene_gameplay(ember::engine& engine, ember::scene* prev)
         }
     }
 
+    // Initialize board
     for (int r = 0; r < num_rows; ++r) {
         for (int c = 0; c < num_cols; ++c) {
             tile_at(r, c) = {
@@ -267,10 +271,28 @@ void scene_gameplay::render() {
     {
         for (auto& c : player_characters) {
             // Card
+            if (c.dead) {
+                engine->basic_shader.set_saturation(0);
+                engine->basic_shader.set_tint({0.5, 0.5, 0.5, 0.5});
+            }
             draw_sprite({c.pos, 1}, c.size, "character_card", {0, 0}, {7.f/16.f, 10.f/16.f});
+            if (c.dead) {
+                engine->basic_shader.set_saturation(1);
+                engine->basic_shader.set_tint({1, 1, 1, 1});
+            }
 
             // Portrait
-            draw_sprite({c.pos + glm::vec2{0, 1.5}, 2}, {1, 1}, c.base.portrait, {0, 0}, {1, 1});
+            if (!c.dead) {
+                if (c.deployed) {
+                    engine->basic_shader.set_saturation(0);
+                    engine->basic_shader.set_tint({0.5, 0.5, 0.5, 0.5});
+                }
+                draw_sprite({c.pos + glm::vec2{0, 1.5}, 2}, {1, 1}, c.base.portrait, {0, 0}, {1, 1});
+                if (c.deployed) {
+                    engine->basic_shader.set_saturation(1);
+                    engine->basic_shader.set_tint({1, 1, 1, 1});
+                }
+            }
 
             // Health
             for (int i = 0; i < c.base.max_health; ++i) {
@@ -353,9 +375,25 @@ void scene_gameplay::render() {
         
         sushi::draw_mesh(sprite_mesh);
 
-        // Render play/pause icon
-        if (current_turn == turn::SET_ACTIONS) {
-            if (auto cref = entities.get_component<component::character_ref*>(eid)) {
+        if (auto cref = entities.get_component<component::character_ref*>(eid)) {
+            // Health
+            for (int i = 0; i < cref->c->max_health; ++i) {
+                auto uv1 = glm::vec2{0.5f, 1.f / 8.f};
+                if (i < cref->c->health) {
+                    uv1.y = 0.f;
+                }
+                auto x = 0.8f;
+                auto y = 0.8f - (i * 21.f/64.f);
+                draw_sprite(
+                    transform.pos + glm::vec3{x, y, 1},
+                    {0.5, 0.5},
+                    "character_card",
+                    uv1,
+                    uv1 + glm::vec2{0.125, 0.125});
+            }
+
+            // Render play/pause icon
+            if (current_turn == turn::SET_ACTIONS) {
                 if (cref->player_controlled) {
                     auto paused = cref->a == component::character_ref::PAUSE;
 
@@ -373,12 +411,10 @@ void scene_gameplay::render() {
                     engine->basic_shader.set_tint({1, 1, 1, 1});
                 }
             }
-        }
 
-        // Render movement card
-        if (is_in(mouse, transform.pos, {1, 1})) {
-            if (auto cref = entities.get_component<component::character_ref*>(eid)) {
-                render_movement_card(transform.pos + glm::vec3{1, 1, 1}, glm::vec2{65.f/64.f, 86.f/64.f}, *cref->m);
+            // Render movement card
+            if (is_in(mouse, transform.pos, {1, 1})) {
+                render_movement_card(transform.pos + glm::vec3{1, 1, 1}, glm::vec2{65.f / 64.f, 86.f / 64.f}, *cref->m);
             }
         }
     });
@@ -463,7 +499,8 @@ auto scene_gameplay::handle_game_input(const SDL_Event& event) -> bool {
         if (current_turn == turn::SUMMON && picked_card != nullptr) {
             auto& card = *picked_card;
             for (auto& player : player_characters) {
-                if(player.pos.x < p.x &&
+                if(!player.dead && !player.deployed &&
+                    player.pos.x < p.x &&
                     player.pos.x + (player.size.x / 1) > p.x &&
                     player.pos.y < p.y &&
                     player.pos.y + (player.size.y / 1) > p.y ){
@@ -477,6 +514,7 @@ auto scene_gameplay::handle_game_input(const SDL_Event& event) -> bool {
                         cref->player_controlled = true;
                         sref->texture = cref->c->portrait;
                         sref->frames = {0};
+                        player.deployed = true;
                         next_turn();
                         break;
                     }
@@ -613,7 +651,28 @@ void scene_gameplay::move_units(bool player_controlled) {
 
         // Check collision
         if (next_tile.occupant) {
-            return false;
+            if (auto ocref = entities.get_component<component::character_ref*>(*next_tile.occupant)) {
+                if (ocref->player_controlled != u.cref->player_controlled) {
+                    ocref->c->health -= u.cref->c->power;
+                    if (ocref->c->health <= 0) {
+                        ocref->c->health = 0;
+                        if (ocref->player_controlled) {
+                            // Dangerous cast
+                            auto& player_char = reinterpret_cast<player_character_card&>(*ocref->c);
+                            player_char.deployed = false;
+                            player_char.dead = true;
+                        }
+                        entities.destroy_entity(*next_tile.occupant);
+                    } else {
+                        // TODO animate
+                        return true;
+                    }
+                } else {
+                    return false;
+                }
+            } else {
+                return false;
+            }
         }
 
         // Actually move the unit

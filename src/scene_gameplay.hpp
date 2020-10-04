@@ -38,6 +38,8 @@ struct player_character_card {
     character base;
     glm::vec2 pos;
     glm::vec2 size;
+    bool deployed;
+    bool dead;
 };
 
 enum class turn {

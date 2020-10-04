@@ -56,11 +56,16 @@ struct character_ref {
 };
 REFLECT(character_ref, (c)(m)(board_pos)(a)(player_controlled))
 
+struct ephemeral_character {
+    character c;
+};
+REFLECT(ephemeral_character, (c))
+
 struct locomotion {
     glm::vec3 target = {0, 0, 0};
     float duration = 0;
 };
-REFLECT(locomotion, (target)(duration));
+REFLECT(locomotion, (target)(duration))
 
 } // namespace component
 
