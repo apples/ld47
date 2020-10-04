@@ -294,13 +294,12 @@ auto scene_gameplay::handle_game_input(const SDL_Event& event) -> bool {
 
         if(picked_card != nullptr) {
             for(player_character_card player : player_characters) {
-                if(player.pos.x - (0) < p.x &&
+                if(player.pos.x < p.x &&
                     player.pos.x + (player.size.x / 1) > p.x &&
-                    player.pos.y - (0) < p.y &&
+                    player.pos.y < p.y &&
                     player.pos.y + (player.size.y / 1) > p.y ){
 
                     (*picked_card).visible = false;
-                    std::cout << "Colision" << std::endl;
                 }
             }
         }
