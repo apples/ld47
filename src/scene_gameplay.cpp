@@ -15,6 +15,14 @@
 
 #include <sushi/sushi.hpp>
 
+namespace { // static
+
+bool is_in(glm::vec2 p, glm::vec2 a, glm::vec2 s) {
+    return p.x >= a.x && p.x <= a.x + s.x && p.y >= a.y && p.y <= a.y + s.y;
+}
+
+}
+
 // Scene constructor
 // Initializes private members and loads any prerequisite assets (usually small ones!).
 // Scene is not actually the current scene yet, so interactions with the engine state and rendering are forbidden.
@@ -206,6 +214,24 @@ void scene_gameplay::render() {
         }
     }
 
+    auto render_movement_card = [&](const glm::vec3& loc, const glm::vec2& size, const movement_card& c) {
+        draw_sprite(loc, size, "character_card", {0.f, 170.f / 256.f}, {65.f / 256.f, 1.f});
+
+        auto pos = loc + glm::vec3{23.f / 64.f, 2.f / 64.f, 1};
+        auto offs = glm::vec3{19.f / 64.f, 19.f / 64.f, 0};
+
+        auto uv1 = glm::vec2{0.5f, 0.25f};
+        auto uvd = glm::vec2{0.125f, 0.125f};
+
+        for (auto& m : c.movements) {
+            pos += offs * glm::vec3{m.x, m.y, 1};
+
+            draw_sprite(pos, {0.5f, 0.5f}, "character_card", uv1, uv1 + uvd);
+
+            uv1.y = 0.375f;
+        }
+    };
+
     // Render movement cards
     {
         for (auto& c : available_movement_cards) {
@@ -216,21 +242,7 @@ void scene_gameplay::render() {
                     loc = glm::vec3{mouse - glm::vec2{0.5f, 2.f/3.f}, 1};
                 }
 
-                draw_sprite(loc, c.size, "character_card", {0.f, 170.f/256.f}, {65.f/256.f, 1.f});
-
-                auto pos = loc + glm::vec3{23.f/64.f, 2.f/64.f, 1};
-                auto offs = glm::vec3{19.f/64.f, 19.f/64.f, 0};
-
-                auto uv1 = glm::vec2{0.5f, 0.25f};
-                auto uvd = glm::vec2{0.125f, 0.125f};
-
-                for (auto& m : c.data->movements) {
-                    pos += offs * glm::vec3{m.x, m.y, 1};
-
-                    draw_sprite(pos, {0.5f, 0.5f}, "character_card", uv1, uv1 + uvd);
-
-                    uv1.y = 0.375f;
-                }
+                render_movement_card(loc, c.size, *c.data);
             }
         }
     }
@@ -261,6 +273,7 @@ void scene_gameplay::render() {
         
         sushi::draw_mesh(sprite_mesh);
 
+        // Render play/pause icon
         if (current_turn == turn::SET_ACTIONS) {
             if (auto cref = entities.get_component<component::character_ref*>(eid)) {
                 if (cref->player_controlled) {
@@ -279,6 +292,13 @@ void scene_gameplay::render() {
                     draw_sprite(pos, {1, 1}, "overlays", uv1, uv1 + glm::vec2{0.25, 0.25});
                     engine->basic_shader.set_tint({1, 1, 1, 1});
                 }
+            }
+        }
+
+        // Render movement card
+        if (is_in(mouse, transform.pos, {1, 1})) {
+            if (auto cref = entities.get_component<component::character_ref*>(eid)) {
+                render_movement_card(transform.pos + glm::vec3{1, 1, 1}, glm::vec2{65.f/64.f, 86.f/64.f}, *cref->m);
             }
         }
     });
@@ -326,7 +346,7 @@ auto scene_gameplay::handle_game_input(const SDL_Event& event) -> bool {
         
         // Check card picking
         for (auto& c : available_movement_cards) {
-            if (c.pickable && p.x >= c.pos.x && p.x <= c.pos.x + c.size.x && p.y >= c.pos.y && p.y <= c.pos.y + c.size.y) {
+            if (c.pickable && is_in(p, c.pos, c.size)) {
                 picked_card = &c;
                 return true;
             }
