@@ -27,7 +27,9 @@ scene_gameplay::scene_gameplay(ember::engine& engine, ember::scene* prev)
       tiles(3*4),
       num_rows(4),
       num_cols(3),
-      board_mesh(make_board_mesh(4, 3, {1, 1}, {0, .25}, {.25, 0})),
+      board_tile_size{4.f/3.f, 4.f/3.f},
+      board_mesh(),
+      board_pos{6, 3},
       player_characters(),
       movement_cards(load_movement_cards()),
       available_movement_cards(),
@@ -35,6 +37,8 @@ scene_gameplay::scene_gameplay(ember::engine& engine, ember::scene* prev)
     camera.height = 9; // Height of the camera viewport in world units
     camera.aspect_ratio = 16.f/9.f;
     camera.pos = {-camera.height/2.f * camera.aspect_ratio, -camera.height/2.f, -50};
+
+    board_mesh = make_board_mesh(4, 3, board_tile_size, {0, .25}, {.25, 0});
 
     player_characters.push_back({
         {
@@ -67,6 +71,17 @@ scene_gameplay::scene_gameplay(ember::engine& engine, ember::scene* prev)
             }
         }
     }
+
+    for (int r = 0; r < num_rows; ++r) {
+        for (int c = 0; c < num_cols; ++c) {
+            tile_at(r, c) = {
+                r,
+                c,
+                std::nullopt,
+                board_pos + board_tile_size/2.f + board_tile_size * glm::vec2{c, r},
+            };
+        }
+    }
 }
 
 // Scene initialization
@@ -84,6 +99,13 @@ void scene_gameplay::init() {
 
     // Call the "init" function in the "data/scripts/scenes/gameplay.lua" script, with no params.
     engine->call_script("scenes.gameplay", "init");
+
+    // Spawn test entity
+    auto [eid, cref, sref] = spawn_entity(0, 1);
+    cref->c = &player_characters[0].base;
+    cref->m = available_movement_cards[0].data;
+    sref->texture = "kagami";
+    sref->frames = {0};
 }
 
 // Tick/update function
@@ -147,8 +169,7 @@ void scene_gameplay::render() {
     // Render board
     {
         auto modelmat = glm::mat4(1);
-        modelmat = glm::translate(modelmat, {6, 3, 0});
-        modelmat = glm::scale(modelmat, {4.f/3.f, 4.f/3.f, 1});
+        modelmat = glm::translate(modelmat, {board_pos, 0});
 
         // Set matrix uniforms.
         engine->basic_shader.set_uvmat(glm::mat3(1.f));
@@ -262,9 +283,9 @@ auto scene_gameplay::handle_game_input(const SDL_Event& event) -> bool {
             // case SDLK_RIGHT:
             //     update(pressed, &controller::right, nullptr);
             //     return true;
-            // case SDLK_SPACE:
-            //     update(pressed, nullptr, &controller::action_pressed);
-            //     return true;
+            case SDLK_SPACE:
+                next_turn();
+                return true;
             default:
                 return false;
         }
@@ -328,4 +349,29 @@ auto scene_gameplay::render_gui() -> sol::table {
 
 board_tile& scene_gameplay::tile_at(int r, int c) {
     return tiles[r * num_cols + c];
+}
+
+void scene_gameplay::next_turn() {
+    // TODO
+}
+
+auto scene_gameplay::spawn_entity(int r, int c) -> spawn_result {
+    auto transform = component::transform{};
+    transform.pos = {tile_at(0, 1).center - glm::vec2{0.5, 0.5}, 1};
+
+    auto sprite = component::sprite{};
+
+    auto character_ref = component::character_ref{};
+    character_ref.board_pos = {0, 1};
+
+    auto eid = entities.create_entity();
+    entities.add_component(eid, transform);
+    auto sid = entities.add_component(eid, sprite);
+    auto cid = entities.add_component(eid, character_ref);
+
+    return {
+        eid,
+        &entities.get_component_by_id<component::character_ref>(cid),
+        &entities.get_component_by_id<component::sprite>(sid),
+    };
 }

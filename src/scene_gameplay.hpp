@@ -1,13 +1,13 @@
 #pragma once
 
 #include "character.hpp"
+#include "movement.hpp"
+#include "components.hpp"
 
 #include "ember/box2d_helpers.hpp"
 #include "ember/camera.hpp"
 #include "ember/entities.hpp"
 #include "ember/scene.hpp"
-
-#include "movement.hpp"
 
 #include <sushi/sushi.hpp>
 #include <sol.hpp>
@@ -22,6 +22,7 @@ struct board_tile {
     int r = 0;
     int c = 0;
     std::optional<ember::database::ent_id> occupant;
+    glm::vec2 center;
 };
 
 struct movement_card_item {
@@ -38,6 +39,20 @@ struct player_character_card {
     glm::vec2 size;
 };
 
+enum class turn {
+    SUMMON,
+    SET_ACTIONS,
+    AUTOPLAYER,
+    ENEMY_SPAWN,
+    ENEMY_MOVE,
+};
+
+struct spawn_result {
+    ember::database::ent_id eid;
+    component::character_ref* cref;
+    component::sprite* sprite;
+};
+
 class scene_gameplay final : public ember::scene {
 public:
     scene_gameplay(ember::engine& eng, scene* prev);
@@ -50,6 +65,10 @@ public:
 
     board_tile& tile_at(int r, int c);
 
+    void next_turn();
+
+    auto spawn_entity(int r, int c) -> spawn_result;
+
 private:
     ember::camera::orthographic camera;
     ember::database entities;
@@ -60,7 +79,9 @@ private:
     std::vector<board_tile> tiles;
     int num_rows;
     int num_cols;
+    glm::vec2 board_tile_size;
     sushi::mesh_group board_mesh;
+    glm::vec2 board_pos;
 
     std::vector<player_character_card> player_characters;
 
@@ -68,4 +89,6 @@ private:
 
     std::vector<movement_card_item> available_movement_cards;
     movement_card_item* picked_card;
+
+    turn current_turn;
 };

@@ -41,11 +41,18 @@ struct sprite {
 REFLECT(sprite, (texture)(size)(frames)(time))
 
 struct character_ref {
+    enum action {
+        PLAY,
+        PAUSE,
+        ATTACK
+    };
+
     character* c = nullptr;
-    movement* m = nullptr;
+    movement_card* m = nullptr;
     std::optional<glm::ivec2> board_pos;
+    action a = PLAY;
 };
-REFLECT(character_ref, (c)(m)(board_pos))
+REFLECT(character_ref, (c)(m)(board_pos)(a))
 
 } // namespace component
 
