@@ -42,7 +42,8 @@ scene_gameplay::scene_gameplay(ember::engine& engine, ember::scene* prev)
       movement_cards(load_movement_cards()),
       available_movement_cards(),
       picked_card(nullptr),
-      current_turn(turn::SET_ACTIONS) {
+      current_turn(turn::SET_ACTIONS),
+      player_start_point{1, 0} {
     camera.height = 9; // Height of the camera viewport in world units
     camera.aspect_ratio = 16.f/9.f;
     camera.pos = {-camera.height/2.f * camera.aspect_ratio, -camera.height/2.f, -50};
@@ -410,9 +411,12 @@ auto scene_gameplay::handle_game_input(const SDL_Event& event) -> bool {
                     player.pos.y + (player.size.y / 1) > p.y ){
 
                     card.visible = false;
-                    auto [eid, cref, sref] = spawn_entity(card.data->movements[0].y, card.data->movements[0].x + 1);
+                    auto [eid, cref, sref] = spawn_entity(
+                        card.data->movements[0].y + player_start_point.y,
+                        card.data->movements[0].x + player_start_point.x);
                     cref->c = &player.base;
                     cref->m = card.data;
+                    cref->player_controlled = true;
                     sref->texture = "kogamu";
                     sref->frames = {0};
                     break;
@@ -442,6 +446,11 @@ auto scene_gameplay::render_gui() -> sol::table {
 }
 
 board_tile& scene_gameplay::tile_at(int r, int c) {
+    if (r < 0 || r >= num_rows || c < 0 || c >= num_cols) {
+        std::cerr << "ERROR: Invalid tile coordinate: " << r << "," << c << std::endl;
+        return tiles[0];
+    }
+
     return tiles[r * num_cols + c];
 }
 
@@ -466,7 +475,7 @@ auto scene_gameplay::spawn_entity(int r, int c) -> spawn_result {
     auto sprite = component::sprite{};
 
     auto character_ref = component::character_ref{};
-    character_ref.board_pos = {r, c};
+    character_ref.board_pos = {c, r};
 
     auto eid = entities.create_entity();
     entities.add_component(eid, transform);
@@ -495,9 +504,15 @@ void scene_gameplay::move_units(bool player_controlled) {
     auto try_move = [&](const unit& u) {
         auto next_index = (u.cref->move_index + 1) % u.cref->m->movements.size();
 
-        auto& offs = u.cref->m->movements[next_index];
+        auto offs = u.cref->m->movements[next_index];
 
-        auto next_pos = *u.cref->board_pos + glm::ivec2{offs.x, offs.y};
+        auto next_pos = *u.cref->board_pos;
+        
+        if (next_index == 0) {
+            next_pos = player_start_point;
+        }
+        
+        next_pos += glm::ivec2{offs.x, offs.y};
 
         auto& cur_tile = tile_at(u.cref->board_pos->y, u.cref->board_pos->x);
         auto& next_tile = tile_at(next_pos.y, next_pos.x);

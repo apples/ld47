@@ -93,4 +93,6 @@ private:
     movement_card_item* picked_card;
 
     turn current_turn;
+
+    glm::ivec2 player_start_point;
 };
