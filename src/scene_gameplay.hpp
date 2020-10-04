@@ -23,6 +23,7 @@ struct board_tile {
     int c = 0;
     std::optional<ember::database::ent_id> occupant;
     glm::vec2 center;
+    bool player_threatens = false;
 };
 
 struct movement_card_item {
@@ -70,6 +71,8 @@ public:
     auto spawn_entity(int r, int c) -> spawn_result;
 
     void move_units(bool player_controlled);
+
+    void enemy_ai();
 
     void enter_turn(turn t);
 

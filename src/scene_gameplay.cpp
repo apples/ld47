@@ -133,9 +133,12 @@ void scene_gameplay::init() {
     // Spawn test enemy
     enemy_characters.push_back({1, 1, 1, "goblin_down"});
 
-    auto [eid, cref, sref] = spawn_entity(0, 0);
+    auto m = &enemy_movement_cards[0];
+    auto r = player_start_point.y + m->movements[0].y;
+    auto c = player_start_point.x + m->movements[0].x;
+    auto [eid, cref, sref] = spawn_entity(r, c);
     cref->c = &enemy_characters[0];
-    cref->m = &enemy_movement_cards[0];
+    cref->m = m;
     sref->texture = "goblin_down";
     sref->frames = {0};
     cref->player_controlled = false;
@@ -171,6 +174,11 @@ void scene_gameplay::tick(float delta) {
     // Turn systems
     switch (current_turn) {
         case turn::AUTOPLAYER:
+            if (entities.count_components<component::locomotion>() == 0) {
+                next_turn(true);
+            }
+            break;
+        case turn::ENEMY_MOVE:
             if (entities.count_components<component::locomotion>() == 0) {
                 next_turn(true);
             }
@@ -531,7 +539,7 @@ void scene_gameplay::enter_turn(turn t) {
             }
             break;
         case turn::ENEMY_MOVE:
-            next_turn(true);
+            enemy_ai();
             break;
         case turn::ENEMY_SPAWN:
             next_turn(true);
@@ -631,4 +639,65 @@ void scene_gameplay::move_units(bool player_controlled) {
         }
         last_sz = deferred.size();
     }
+}
+
+void scene_gameplay::enemy_ai() {
+    auto get_next_pos = [&](const component::character_ref& cref) {
+        auto next_index = (cref.move_index + 1) % cref.m->movements.size();
+
+        auto offs = cref.m->movements[next_index];
+
+        auto next_pos = *cref.board_pos;
+        
+        if (next_index == 0) {
+            next_pos = player_start_point;
+        }
+        
+        next_pos += glm::ivec2{offs.x, offs.y};
+
+        return next_pos;
+    };
+
+    // Threat detection
+    for (auto& t : tiles) {
+        t.player_threatens = false;
+    }
+    entities.visit([&](ember::database::ent_id eid, component::character_ref& cref) {
+        if (cref.player_controlled) {
+            auto next_pos = get_next_pos(cref);
+
+            auto& cur_tile = tile_at(cref.board_pos->y, cref.board_pos->x);
+            auto& next_tile = tile_at(next_pos.y, next_pos.x);
+
+            if (next_tile.occupant) {
+                if (auto ocref = entities.get_component<component::character_ref*>(eid)) {
+                    if (!ocref->player_controlled) {
+                        next_tile.player_threatens = true;
+                    }
+                }
+            } else {
+                next_tile.player_threatens = true;
+            }
+        }
+    });
+
+    // Decision making
+    entities.visit([&](ember::database::ent_id eid, component::character_ref& cref) {
+        if (!cref.player_controlled) {
+            auto next_pos = get_next_pos(cref);
+
+            auto& cur_tile = tile_at(cref.board_pos->y, cref.board_pos->x);
+            auto& next_tile = tile_at(next_pos.y, next_pos.x);
+
+            if (cur_tile.player_threatens) {
+                cref.a = component::character_ref::PLAY;
+            } else if (next_tile.player_threatens) {
+                cref.a = component::character_ref::PAUSE;
+            } else {
+                cref.a = component::character_ref::PLAY;
+            }
+        }
+    });
+
+    move_units(false);
 }
