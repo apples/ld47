@@ -17,6 +17,7 @@
 #include <tuple>
 #include <vector>
 #include <optional>
+#include <random>
 
 struct board_tile {
     int r = 0;
@@ -24,6 +25,9 @@ struct board_tile {
     std::optional<ember::database::ent_id> occupant;
     glm::vec2 center;
     bool player_threatens = false;
+    bool enemy_spawning = false;
+    int spawn_enemy_id = 0;
+    int spawn_move_id = 0;
 };
 
 struct movement_card_item {
@@ -40,6 +44,11 @@ struct player_character_card {
     glm::vec2 size;
     bool deployed;
     bool dead;
+};
+
+struct enemy_character {
+    character base;
+    std::vector<std::string> moves;
 };
 
 enum class turn {
@@ -78,6 +87,8 @@ public:
 
     void enter_turn(turn t);
 
+    void spawn_enemy();
+
 private:
     ember::camera::orthographic camera;
     ember::database entities;
@@ -93,7 +104,7 @@ private:
     glm::vec2 board_pos;
 
     std::vector<player_character_card> player_characters;
-    std::vector<character> enemy_characters;
+    std::vector<enemy_character> enemy_characters;
 
     std::vector<movement_card> movement_cards;
     std::vector<movement_card> enemy_movement_cards;
@@ -104,4 +115,6 @@ private:
     turn current_turn;
 
     glm::ivec2 player_start_point;
+
+    std::mt19937 rng;
 };
