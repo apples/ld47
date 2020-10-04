@@ -52,8 +52,9 @@ struct character_ref {
     std::optional<glm::ivec2> board_pos;
     action a = PLAY;
     int move_index = 0;
+    bool player_controlled = false;
 };
-REFLECT(character_ref, (c)(m)(board_pos)(a))
+REFLECT(character_ref, (c)(m)(board_pos)(a)(player_controlled))
 
 } // namespace component
 

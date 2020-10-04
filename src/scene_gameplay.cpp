@@ -107,6 +107,7 @@ void scene_gameplay::init() {
     cref->m = available_movement_cards[0].data;
     sref->texture = "kagami";
     sref->frames = {0};
+    cref->player_controlled = true;
 }
 
 // Tick/update function
@@ -235,7 +236,7 @@ void scene_gameplay::render() {
     }
 
     // Render entities
-    entities.visit([&](const component::sprite& sprite, const component::transform& transform) {
+    entities.visit([&](ember::database::ent_id eid, component::sprite& sprite, const component::transform& transform) {
         auto modelmat = to_mat4(transform);
         auto tex = engine->texture_cache.get(sprite.texture);
 
@@ -259,6 +260,27 @@ void scene_gameplay::render() {
         }
         
         sushi::draw_mesh(sprite_mesh);
+
+        if (current_turn == turn::SET_ACTIONS) {
+            if (auto cref = entities.get_component<component::character_ref*>(eid)) {
+                if (cref->player_controlled) {
+                    auto paused = cref->a == component::character_ref::PAUSE;
+
+                    auto uv1 = glm::vec2{0, 0};
+
+                    if (paused) {
+                        uv1 = glm::vec2{0.25, 0};
+                    }
+
+                    auto pos = transform.pos;
+                    pos.z += 1;
+
+                    engine->basic_shader.set_tint({1, 1, 1, 0.5});
+                    draw_sprite(pos, {1, 1}, "overlays", uv1, uv1 + glm::vec2{0.25, 0.25});
+                    engine->basic_shader.set_tint({1, 1, 1, 1});
+                }
+            }
+        }
     });
 }
 
@@ -295,12 +317,14 @@ auto scene_gameplay::handle_game_input(const SDL_Event& event) -> bool {
         }
     };
 
+    // Mouse down
     auto process_mouse_down = [&](const SDL_MouseButtonEvent& button) {
         auto screenpos =
             glm::vec2{button.x / float(engine->display.width), 1.f - button.y / float(engine->display.height)};
         
         auto p = screenpos * glm::vec2{16.f, 9.f};
         
+        // Check card picking
         for (auto& c : available_movement_cards) {
             if (c.pickable && p.x >= c.pos.x && p.x <= c.pos.x + c.size.x && p.y >= c.pos.y && p.y <= c.pos.y + c.size.y) {
                 picked_card = &c;
@@ -308,9 +332,26 @@ auto scene_gameplay::handle_game_input(const SDL_Event& event) -> bool {
             }
         }
 
+        // Check unit state toggling
+        if (current_turn == turn::SET_ACTIONS) {
+            entities.visit([&](component::character_ref& cref, const component::transform& tform) {
+                if (cref.player_controlled && p.x >= tform.pos.x && p.x <= tform.pos.x + 1 && p.y >= tform.pos.y && p.y <= tform.pos.y + 1) {
+                    switch (cref.a) {
+                        case component::character_ref::PAUSE:
+                            cref.a = component::character_ref::PLAY;
+                            break;
+                        case component::character_ref::PLAY:
+                            cref.a = component::character_ref::PAUSE;
+                            break;
+                    }
+                }
+            });
+        }
+
         return false;
     };
 
+    // Mouse up
     auto process_mouse_up = [&](const SDL_MouseButtonEvent& button) {
         auto screenpos =
             glm::vec2{button.x / float(engine->display.width), 1.f - button.y / float(engine->display.height)};
