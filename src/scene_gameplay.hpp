@@ -88,6 +88,7 @@ private:
     std::vector<player_character_card> player_characters;
 
     std::vector<movement_card> movement_cards;
+    std::vector<movement_card> enemy_movement_cards;
 
     std::vector<movement_card_item> available_movement_cards;
     movement_card_item* picked_card;
