@@ -306,6 +306,15 @@ void scene_gameplay::render() {
                 draw_sprite(
                     {c.pos + glm::vec2{x, y}, 2}, {0.5, 0.5}, "character_card", uv1, uv1 + glm::vec2{0.125, 0.125});
             }
+
+            // Power
+            for (int i = 0; i < c.base.max_health; ++i) {
+                auto uv1 = glm::vec2{0.625f, 0.f};
+                auto x = 87.f/64.f;
+                auto y = (138.f - 21*i)/64.f;
+                draw_sprite(
+                    {c.pos + glm::vec2{x, y}, 2}, {0.5, 0.5}, "character_card", uv1, uv1 + glm::vec2{0.125, 0.125});
+            }
         }
     }
 
