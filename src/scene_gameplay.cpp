@@ -318,14 +318,19 @@ auto scene_gameplay::handle_game_input(const SDL_Event& event) -> bool {
         auto p = screenpos * glm::vec2{16.f, 9.f};
 
         if(picked_card != nullptr) {
+            auto card = *picked_card;
             for(player_character_card player : player_characters) {
                 if(player.pos.x < p.x &&
                     player.pos.x + (player.size.x / 1) > p.x &&
                     player.pos.y < p.y &&
                     player.pos.y + (player.size.y / 1) > p.y ){
 
-                    (*picked_card).visible = false;
-                    //spawn_entity();
+                    card.visible = false;
+                    auto [eid, cref, sref] = spawn_entity(card.data->movements[0].x, card.data->movements[0].y);
+                    cref->c = &player.base;
+                    cref->m = card.data;
+                    sref->texture = "kogamu";
+                    sref->frames = {0};
                     break;
                 }
             }
