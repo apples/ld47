@@ -2,55 +2,55 @@
 	{
         "name": "Inky",
         "movements": [
-            { "x": -1, "y": 0 },
-            { "x": 0, "y": 2 },
-            { "x": 2, "y": -1 },
-            { "x": -1, "y": -1 }
+            { "x": -1, "y": 0, "attack": false },
+            { "x": 0, "y": 2, "attack": false },
+            { "x": 2, "y": -1, "attack": false },
+            { "x": -1, "y": -1, "attack": false }
         ]
     },
 	{
         "name": "Blinky",
         "movements": [
-            { "x": -1, "y": 1 },
-            { "x": 1, "y": 1 },
-            { "x": 1, "y": 1 },
-            { "x": -1, "y": -2 }
+            { "x": -1, "y": 0, "attack": false },
+            { "x": 1, "y": 1, "attack": false },
+            { "x": 1, "y": 1, "attack": false },
+            { "x": -1, "y": -2, "attack": false }
         ]
     },
 	{
         "name": "Pinky",
         "movements": [
-            { "x": -1, "y": 2 },
-            { "x": 1, "y": 0 },
-            { "x": 1, "y": 1 },
-            { "x": 0, "y": -2 }
+            { "x": -1, "y": 0, "attack": false },
+            { "x": 0, "y": 3, "attack": false },
+            { "x": 1, "y": -1, "attack": false },
+            { "x": 1, "y": -1, "attack": false }
         ]
     },
 	{
         "name": "Dinky",
         "movements": [
-            { "x": -2, "y": 1 },
-            { "x": 0, "y": 2 },
-            { "x": 1, "y": -1 },
-            { "x": 1, "y": 0 }
+            { "x": 0, "y": 0, "attack": false },
+            { "x": 0, "y": 2, "attack": false },
+            { "x": 1, "y": -1, "attack": false },
+            { "x": -2, "y": 0, "attack": false }
         ]
     },
 	{
         "name": "Kinky",
         "movements": [
-            { "x": 0, "y": 2 },
-            { "x": 1, "y": 1 },
-            { "x": 1, "y": -1 },
-            { "x": 0, "y": -1 }
+            { "x": 0, "y": 0, "attack": false },
+            { "x": -1, "y": 1, "attack": false },
+            { "x": 1, "y": 2, "attack": false },
+            { "x": 1, "y": -1, "attack": false }
         ]
     },
 	{
         "name": "Clyde",
         "movements": [
-            { "x": -1, "y": 1 },
-            { "x": -1, "y": 1 },
-            { "x": 1, "y": 1 },
-            { "x": 1, "y": -2 }
+            { "x": 1, "y": 0, "attack": false },
+            { "x": -2, "y": 1, "attack": false },
+            { "x": 1, "y": 1, "attack": false },
+            { "x": 1, "y": 1, "attack": false }
         ]
     }
 ]
