@@ -321,6 +321,8 @@ auto scene_gameplay::handle_game_input(const SDL_Event& event) -> bool {
                     player.pos.y + (player.size.y / 1) > p.y ){
 
                     (*picked_card).visible = false;
+                    //spawn_entity();
+                    break;
                 }
             }
         }
@@ -356,12 +358,12 @@ void scene_gameplay::next_turn() {
 
 auto scene_gameplay::spawn_entity(int r, int c) -> spawn_result {
     auto transform = component::transform{};
-    transform.pos = {tile_at(0, 1).center - glm::vec2{0.5, 0.5}, 1};
+    transform.pos = {tile_at(r, c).center - glm::vec2{0.5, 0.5}, 1};
 
     auto sprite = component::sprite{};
 
     auto character_ref = component::character_ref{};
-    character_ref.board_pos = {0, 1};
+    character_ref.board_pos = {r, c};
 
     auto eid = entities.create_entity();
     entities.add_component(eid, transform);
