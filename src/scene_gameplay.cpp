@@ -39,6 +39,7 @@ scene_gameplay::scene_gameplay(ember::engine& engine, ember::scene* prev)
       board_mesh(),
       board_pos{6, 3},
       player_characters(),
+      enemy_characters(),
       movement_cards(load_movement_cards()),
       enemy_movement_cards(load_movement_cards("/data/enemyMovement.json")),
       available_movement_cards(),
@@ -130,12 +131,14 @@ void scene_gameplay::init() {
     // cref->player_controlled = true;
 
     // Spawn test enemy
-    // auto [eid, cref, sref] = spawn_entity(0, 0);
-    // cref->c = &player_characters[0].base;
-    // cref->m = available_movement_cards[0].data;
-    // sref->texture = "goblin_down";
-    // sref->frames = {0};
-    // cref->player_controlled = false;
+    enemy_characters.push_back({1, 1, 1, "goblin_down"});
+
+    auto [eid, cref, sref] = spawn_entity(0, 0);
+    cref->c = &enemy_characters[0];
+    cref->m = &enemy_movement_cards[0];
+    sref->texture = "goblin_down";
+    sref->frames = {0};
+    cref->player_controlled = false;
 }
 
 // Tick/update function

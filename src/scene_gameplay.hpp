@@ -86,6 +86,7 @@ private:
     glm::vec2 board_pos;
 
     std::vector<player_character_card> player_characters;
+    std::vector<character> enemy_characters;
 
     std::vector<movement_card> movement_cards;
     std::vector<movement_card> enemy_movement_cards;
