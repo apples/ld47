@@ -419,7 +419,7 @@ auto scene_gameplay::handle_game_input(const SDL_Event& event) -> bool {
                     cref->c = &player.base;
                     cref->m = card.data;
                     cref->player_controlled = true;
-                    sref->texture = "kogamu";
+                    sref->texture = cref->c->portrait;
                     sref->frames = {0};
                     break;
                 }
