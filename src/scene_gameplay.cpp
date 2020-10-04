@@ -338,7 +338,7 @@ void scene_gameplay::render() {
         draw_sprite(loc, size, "character_card", {0.f, 170.f / 256.f}, {65.f / 256.f, 1.f});
 
         auto pos = loc + glm::vec3{23.f / 64.f, 2.f / 64.f, 1};
-        auto offs = glm::vec3{19.f / 64.f, 19.f / 64.f, 0};
+        auto offs = glm::vec3{21.f / 64.f, 21.f / 64.f, 0};
 
         auto uv1 = glm::vec2{0.5f, 0.25f};
         auto uvd = glm::vec2{0.125f, 0.125f};
@@ -361,7 +361,7 @@ void scene_gameplay::render() {
                 auto nd = glm::normalize(d);
 
                 from += nd * 9.f/64.f;
-                to -= nd * 9.f/64.f;
+                to -= nd * 8.f/64.f;
 
                 from.z += 1;
                 to.z += 1;
