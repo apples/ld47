@@ -71,6 +71,8 @@ public:
 
     void move_units(bool player_controlled);
 
+    void enter_turn(turn t);
+
 private:
     ember::camera::orthographic camera;
     ember::database entities;

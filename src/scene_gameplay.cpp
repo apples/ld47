@@ -42,7 +42,7 @@ scene_gameplay::scene_gameplay(ember::engine& engine, ember::scene* prev)
       movement_cards(load_movement_cards()),
       available_movement_cards(),
       picked_card(nullptr),
-      current_turn(turn::SET_ACTIONS),
+      current_turn(turn::SUMMON),
       player_start_point{1, 0} {
     camera.height = 9; // Height of the camera viewport in world units
     camera.aspect_ratio = 16.f/9.f;
@@ -166,6 +166,9 @@ void scene_gameplay::tick(float delta) {
         entities.destroy_entity(eid);
     }
     destroy_queue.clear();
+
+    // Update UI props
+    gui_state["turn"] = int(current_turn);
 }
 
 // Render function
@@ -268,7 +271,15 @@ void scene_gameplay::render() {
                     loc = glm::vec3{mouse - glm::vec2{0.5f, 2.f/3.f}, 1};
                 }
 
+                if (!c.pickable) {
+                    engine->basic_shader.set_tint({0.5, 0.5, 0.5, 0.5});
+                }
+
                 render_movement_card(loc, c.size, *c.data);
+
+                if (!c.pickable) {
+                    engine->basic_shader.set_tint({1, 1, 1, 1});
+                }
             }
         }
     }
@@ -371,10 +382,12 @@ auto scene_gameplay::handle_game_input(const SDL_Event& event) -> bool {
         auto p = screenpos * glm::vec2{16.f, 9.f};
         
         // Check card picking
-        for (auto& c : available_movement_cards) {
-            if (c.pickable && is_in(p, c.pos, c.size)) {
-                picked_card = &c;
-                return true;
+        if (current_turn == turn::SUMMON) {
+            for (auto& c : available_movement_cards) {
+                if (c.pickable && is_in(p, c.pos, c.size)) {
+                    picked_card = &c;
+                    return true;
+                }
             }
         }
 
@@ -411,17 +424,18 @@ auto scene_gameplay::handle_game_input(const SDL_Event& event) -> bool {
                     player.pos.x + (player.size.x / 1) > p.x &&
                     player.pos.y < p.y &&
                     player.pos.y + (player.size.y / 1) > p.y ){
-
-                    card.visible = false;
-                    auto [eid, cref, sref] = spawn_entity(
-                        card.data->movements[0].y + player_start_point.y,
-                        card.data->movements[0].x + player_start_point.x);
-                    cref->c = &player.base;
-                    cref->m = card.data;
-                    cref->player_controlled = true;
-                    sref->texture = cref->c->portrait;
-                    sref->frames = {0};
-                    break;
+                    auto r = card.data->movements[0].y + player_start_point.y;
+                    auto c = card.data->movements[0].x + player_start_point.x;
+                    if (!tile_at(r, c).occupant) {
+                        card.visible = false;
+                        auto [eid, cref, sref] = spawn_entity(r, c);
+                        cref->c = &player.base;
+                        cref->m = card.data;
+                        cref->player_controlled = true;
+                        sref->texture = cref->c->portrait;
+                        sref->frames = {0};
+                        break;
+                    }
                 }
             }
         }
@@ -458,14 +472,35 @@ board_tile& scene_gameplay::tile_at(int r, int c) {
 
 void scene_gameplay::next_turn(bool force) {
     switch (current_turn) {
+        case turn::SUMMON:
+            for (auto& c : available_movement_cards) {
+                c.pickable = false;
+            }
+            enter_turn(turn::SET_ACTIONS);
+            break;
         case turn::SET_ACTIONS:
-            current_turn = turn::AUTOPLAYER;
-            move_units(true);
+            enter_turn(turn::AUTOPLAYER);
             break;
         case turn::AUTOPLAYER:
             if (force) {
-                current_turn = turn::SET_ACTIONS;
+                enter_turn(turn::SUMMON);
             }
+            break;
+    }
+}
+
+void scene_gameplay::enter_turn(turn t) {
+    current_turn = t;
+    switch (current_turn) {
+        case turn::SUMMON:
+            for (auto& c : available_movement_cards) {
+                c.pickable = true;
+            }
+            break;
+        case turn::SET_ACTIONS:
+            break;
+        case turn::AUTOPLAYER:
+            move_units(true);
             break;
     }
 }
@@ -562,6 +597,4 @@ void scene_gameplay::move_units(bool player_controlled) {
         }
         last_sz = deferred.size();
     }
-
-    next_turn(true);
 }
