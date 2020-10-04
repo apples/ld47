@@ -40,6 +40,7 @@ scene_gameplay::scene_gameplay(ember::engine& engine, ember::scene* prev)
       board_pos{6, 3},
       player_characters(),
       movement_cards(load_movement_cards()),
+      enemy_movement_cards(load_movement_cards("/data/enemyMovement.json")),
       available_movement_cards(),
       picked_card(nullptr),
       current_turn(turn::SUMMON),
@@ -119,6 +120,22 @@ void scene_gameplay::init() {
 
     // Call the "init" function in the "data/scripts/scenes/gameplay.lua" script, with no params.
     engine->call_script("scenes.gameplay", "init");
+
+    // // Spawn test entity
+    // auto [eid, cref, sref] = spawn_entity(0, 0);
+    // cref->c = &player_characters[0].base;
+    // cref->m = available_movement_cards[0].data;
+    // sref->texture = "kagami";
+    // sref->frames = {0};
+    // cref->player_controlled = true;
+
+    // Spawn test enemy
+    // auto [eid, cref, sref] = spawn_entity(0, 0);
+    // cref->c = &player_characters[0].base;
+    // cref->m = available_movement_cards[0].data;
+    // sref->texture = "goblin_down";
+    // sref->frames = {0};
+    // cref->player_controlled = false;
 }
 
 // Tick/update function
@@ -461,7 +478,7 @@ auto scene_gameplay::render_gui() -> sol::table {
     return ember::vdom::create_element(engine->lua, "gui.scene_gameplay.root", gui_state, engine->lua.create_table());
 }
 
-board_tile& scene_gameplay::tile_at(int r, int c) {
+board_tile& scene_gameplay::tile_at(int r, int c) { 
     if (r < 0 || r >= num_rows || c < 0 || c >= num_cols) {
         std::cerr << "ERROR: Invalid tile coordinate: " << r << "," << c << std::endl;
         return tiles[0];
