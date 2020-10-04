@@ -266,8 +266,23 @@ void scene_gameplay::render() {
     // Render character sheets
     {
         for (auto& c : player_characters) {
+            // Card
             draw_sprite({c.pos, 1}, c.size, "character_card", {0, 0}, {7.f/16.f, 10.f/16.f});
+
+            // Portrait
             draw_sprite({c.pos + glm::vec2{0, 1.5}, 2}, {1, 1}, c.base.portrait, {0, 0}, {1, 1});
+
+            // Health
+            for (int i = 0; i < c.base.max_health; ++i) {
+                auto uv1 = glm::vec2{0.5f, 1.f/8.f};
+                if (i < c.base.health) {
+                    uv1.y = 0.f;
+                }
+                auto x = 67.f/64.f;
+                auto y = (138.f - 21*i)/64.f;
+                draw_sprite(
+                    {c.pos + glm::vec2{x, y}, 2}, {0.5, 0.5}, "character_card", uv1, uv1 + glm::vec2{0.125, 0.125});
+            }
         }
     }
 
