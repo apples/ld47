@@ -56,6 +56,12 @@ struct character_ref {
 };
 REFLECT(character_ref, (c)(m)(board_pos)(a)(player_controlled))
 
+struct locomotion {
+    glm::vec3 target = {0, 0, 0};
+    float duration = 0;
+};
+REFLECT(locomotion, (target)(duration));
+
 } // namespace component
 
 #include "ember/reflection_end.hpp"

@@ -69,7 +69,7 @@ public:
 
     auto spawn_entity(int r, int c) -> spawn_result;
 
-    void move_units();
+    void move_units(bool player_controlled);
 
 private:
     ember::camera::orthographic camera;

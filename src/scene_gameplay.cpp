@@ -131,6 +131,29 @@ void scene_gameplay::tick(float delta) {
         sprite.time += delta;
     });
 
+    // Locomotion system
+    entities.visit([&](ember::database::ent_id eid, component::locomotion& loco, component::transform& tform) {
+        auto d = loco.target - tform.pos;
+        auto a = d * delta / loco.duration;
+
+        tform.pos += a;
+        loco.duration -= delta;
+
+        if (loco.duration <= 0) {
+            tform.pos = loco.target;
+            entities.remove_component<component::locomotion>(eid);
+        }
+    });
+
+    // Turn systems
+    switch (current_turn) {
+        case turn::AUTOPLAYER:
+            if (entities.count_components<component::locomotion>() == 0) {
+                next_turn(true);
+            }
+            break;
+    }
+
     // Dead entity cleanup
     std::sort(begin(destroy_queue), end(destroy_queue), [](auto& a, auto& b) {
         return a.get_index() < b.get_index();
@@ -421,7 +444,7 @@ void scene_gameplay::next_turn(bool force) {
     switch (current_turn) {
         case turn::SET_ACTIONS:
             current_turn = turn::AUTOPLAYER;
-            move_units();
+            move_units(true);
             break;
         case turn::AUTOPLAYER:
             if (force) {
@@ -454,11 +477,10 @@ auto scene_gameplay::spawn_entity(int r, int c) -> spawn_result {
     };
 }
 
-void scene_gameplay::move_units() {
+void scene_gameplay::move_units(bool player_controlled) {
     struct unit {
         ember::database::ent_id eid;
         component::character_ref* cref;
-        component::transform* tform;
     };
 
     // Deferred units will repeatedly try to move until they succeed or a deadlock occurs
@@ -485,15 +507,21 @@ void scene_gameplay::move_units() {
         next_tile.occupant = u.eid;
         u.cref->board_pos = next_pos;
         u.cref->move_index = next_index;
-        u.tform->pos = {next_tile.center - glm::vec2{0.5, 0.5}, 1};
+
+        entities.add_component(u.eid, component::locomotion{
+            {next_tile.center - glm::vec2{0.5, 0.5}, 1},
+            0.25,
+        });
 
         return true;
     };
 
     // Initial moves
-    entities.visit([&](ember::database::ent_id eid, component::character_ref& cref, component::transform& tform) {
-        if (!try_move({eid, &cref, &tform})) {
-            deferred.push_back({eid, &cref, &tform});
+    entities.visit([&](ember::database::ent_id eid, component::character_ref& cref) {
+        if (cref.player_controlled == player_controlled && cref.a == component::character_ref::PLAY) {
+            if (!try_move({eid, &cref})) {
+                deferred.push_back({eid, &cref});
+            }
         }
     });
 
