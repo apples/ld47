@@ -422,7 +422,13 @@ void scene_gameplay::render() {
         for (auto& m : c.movements) {
             pos += offs * glm::vec3{m.x, m.y, 1};
 
-            draw_sprite(pos, {0.5f, 0.5f}, "character_card2", uv1, uv1 + uvd);
+            auto uvoffs = glm::vec2{0, 0};
+
+            if (m.attack) {
+                uvoffs = {0.375, 0};
+            }
+
+            draw_sprite(pos, {0.5f, 0.5f}, "character_card2", uv1 + uvoffs, uv1 + uvoffs + uvd);
 
             uv1.y = 0.375f;
 
