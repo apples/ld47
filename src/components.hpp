@@ -65,6 +65,8 @@ REFLECT(ephemeral_character, (c))
 struct locomotion {
     glm::vec3 target = {0, 0, 0};
     float duration = 0;
+    std::optional<glm::vec3> return_target = std::nullopt;
+    float return_duration = 0;
 };
 REFLECT(locomotion, (target)(duration))
 

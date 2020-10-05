@@ -171,15 +171,32 @@ void scene_gameplay::tick(float delta) {
 
     // Locomotion system
     entities.visit([&](ember::database::ent_id eid, component::locomotion& loco, component::transform& tform) {
-        auto d = loco.target - tform.pos;
-        auto a = d * delta / loco.duration;
+        if (loco.duration > 0) {
+            auto d = loco.target - tform.pos;
+            auto a = d * delta / loco.duration;
 
-        tform.pos += a;
-        loco.duration -= delta;
+            tform.pos += a;
+            loco.duration -= delta;
 
-        if (loco.duration <= 0) {
-            tform.pos = loco.target;
-            entities.remove_component<component::locomotion>(eid);
+            if (loco.duration <= 0) {
+                if (!loco.return_target) {
+                    tform.pos = loco.target;
+                    entities.remove_component<component::locomotion>(eid);
+                } else {
+                    loco.return_duration += loco.duration;
+                }
+            }
+        } else if (loco.return_target) {
+            auto d = *loco.return_target - tform.pos;
+            auto a = d * delta / loco.return_duration;
+
+            tform.pos += a;
+            loco.return_duration -= delta;
+
+            if (loco.return_duration <= 0) {
+                tform.pos = *loco.return_target;
+                entities.remove_component<component::locomotion>(eid);
+            }
         }
     });
 
@@ -763,7 +780,15 @@ void scene_gameplay::move_units(bool player_controlled) {
                         }
                         entities.destroy_entity(*next_tile.occupant);
                     } else {
-                        // TODO animate
+                        entities.add_component(
+                            u.eid,
+                            component::locomotion{
+                                {next_tile.center - glm::vec2{0.5, 0.5}, 1},
+                                0.15,
+                                glm::vec3{cur_tile.center - glm::vec2{0.5, 0.5}, 1},
+                                0.15,
+                            });
+
                         return true;
                     }
                 } else {
