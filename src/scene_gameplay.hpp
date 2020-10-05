@@ -94,6 +94,8 @@ public:
     
     void spawn_enemy();
 
+    bool damage(ember::database::ent_id eid, component::character_ref& cref, int dmg);
+
 private:
     ember::camera::orthographic camera;
     ember::database entities;

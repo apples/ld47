@@ -64,17 +64,17 @@ scene_gameplay::scene_gameplay(ember::engine& engine, ember::scene* prev)
             auto mh = c.value()["max_health"].get<int>();
             auto power = c.value()["power"].get<int>();
             auto portrait = c.value()["portrait"].get<std::string>();
-            auto attacks = new std::vector<attack_pattern>();
+            auto attacks = std::vector<attack_pattern>();
 
-            for(auto& p : c.value()["attack_patterns"].items()) {
-                attacks->push_back(attack_pattern{
+            for(auto& p : c.value()["attack_pattern"].items()) {
+                attacks.push_back({
                     p.value()["x"].get<int>(),
                     p.value()["y"].get<int>()
                 });
             }
 
             player_characters.push_back({
-                {mh, mh, power, portrait, },
+                {mh, mh, power, portrait, std::move(attacks)},
                 {4 + 2 * i, 0},
                 {1.75, 2.5 + (25/256)},
                 false,
@@ -219,11 +219,8 @@ void scene_gameplay::tick(float delta) {
     // Turn systems
     switch (current_turn) {
         case turn::AUTOPLAYER:
-            if (entities.count_components<component::locomotion>() == 0) {
-                next_turn(true);
-            }
-            break;
         case turn::ENEMY_MOVE:
+        case turn::ATTACK:
             if (entities.count_components<component::locomotion>() == 0) {
                 next_turn(true);
             }
@@ -370,7 +367,6 @@ void scene_gameplay::render() {
 
             // Attacks
             for (attack_pattern pattern : c.base.attack_patterns) {
-                std::cout << "planting attack paterns" << std::endl;
                 auto uv1 = glm::vec2{0.5f, 4.f/8.f};
                 auto x = 87.f/64.f;
                 auto y = 38.f/64.f;
@@ -789,23 +785,7 @@ void scene_gameplay::move_units(bool player_controlled) {
         if (next_tile.occupant) {
             if (auto ocref = entities.get_component<component::character_ref*>(*next_tile.occupant)) {
                 if (ocref->player_controlled != u.cref->player_controlled) {
-                    ocref->c->health -= u.cref->c->power;
-                    if (ocref->c->health <= 0) {
-                        ocref->c->health = 0;
-                        if (ocref->player_controlled) {
-                            // Dangerous cast
-                            auto& player_char = reinterpret_cast<player_character_card&>(*ocref->c);
-                            player_char.deployed = false;
-                            player_char.dead = true;
-
-                            for (auto& c : available_movement_cards) {
-                                if (c.data == ocref->m) {
-                                    c.visible = true;
-                                }
-                            }
-                        }
-                        entities.destroy_entity(*next_tile.occupant);
-                    } else {
+                    if (!damage(*next_tile.occupant, *ocref, u.cref->c->power)) {
                         entities.add_component(
                             u.eid,
                             component::locomotion{
@@ -882,48 +862,36 @@ void scene_gameplay::move_units(bool player_controlled) {
 }
 
 void scene_gameplay::do_attacks(bool player_controlled) {
-    entities.visit([&](ember::database::ent_id eid, component::character_ref& cref){
-        if (cref.player_controlled == player_controlled) {
-            for(movement pos : cref.m->movements) {
-                auto offs = cref.m->movements[cref.move_index];
+    entities.visit([&](ember::database::ent_id eid, component::character_ref& cref) {
+        if (cref.player_controlled == player_controlled && cref.board_pos) {
+            auto offs = cref.m->movements[cref.move_index];
 
-                if(offs.attack){
-                    //attack
-                    for(auto& pattern : cref.c->attack_patterns) {
-                        auto r = offs.y + pattern.y;
-                        auto c = offs.x + pattern.x;
-                        if (r < num_rows && r >= 0 && c < num_cols && c >= 0) {
-                            auto tile = tile_at(offs.y + pattern.y, offs.x + pattern.x);
-                            if (tile.occupant) {
-                                if (auto ocref = entities.get_component<component::character_ref*>(*tile.occupant)) {
-                                    if (ocref->player_controlled != cref.player_controlled) {
-                                        ocref->c->health -= cref.c->power;
-                                        if (ocref->c->health <= 0) {
-                                            ocref->c->health = 0;
-                                            if (ocref->player_controlled) {
-                                                // Dangerous cast
-                                                auto& player_char = reinterpret_cast<player_character_card&>(*ocref->c);
-                                                player_char.deployed = false;
-                                                player_char.dead = true;
-                                            }
-                                            entities.destroy_entity(*tile.occupant);
-                                        } else {
-                                            auto atkent = entities.create_entity();
-                                            auto a = tile_at(*cref.board_pos).center - glm::vec2{0.5, 0.5};
-                                            auto b = tile_at(*ocref->board_pos).center - glm::vec2{0.5, 0.5};
+            if (offs.attack) {
+                // attack
+                for (auto& pattern : cref.c->attack_patterns) {
+                    auto r = cref.board_pos->y + pattern.y;
+                    auto c = cref.board_pos->x + pattern.x;
+                    if (r < num_rows && r >= 0 && c < num_cols && c >= 0) {
+                        auto& tile = tile_at(r, c);
+                        {
+                            auto atkent = entities.create_entity();
+                            auto a = tile_at(*cref.board_pos).center - glm::vec2{0.5, 0.5};
+                            auto b = tile.center - glm::vec2{0.5, 0.5};
 
-                                            entities.add_component(atkent, component::transform{{{a, 4}}});
-                                            entities.add_component(
-                                                atkent, component::locomotion{{b, 4}, 0.2, std::nullopt, 0, true});
+                            entities.add_component(atkent, component::transform{{{a, 4}}});
+                            entities.add_component(atkent, component::locomotion{{b, 4}, 0.2, std::nullopt, 0, true});
 
-                                            auto s = component::sprite{};
-                                            s.texture = "attack";
-                                            s.frames = {0};
+                            auto s = component::sprite{};
+                            s.texture = "attack";
+                            s.frames = {0};
 
-                                            entities.add_component(atkent, s);
-                                        }
-                                    } 
-                                } 
+                            entities.add_component(atkent, s);
+                        }
+                        if (tile.occupant) {
+                            if (auto ocref = entities.get_component<component::character_ref*>(*tile.occupant)) {
+                                if (ocref->player_controlled != cref.player_controlled) {
+                                    damage(*tile.occupant, *ocref, cref.c->power);
+                                }
                             }
                         }
                     }
@@ -1044,4 +1012,27 @@ void scene_gameplay::spawn_enemy() {
             t.spawn_move_id = mi;
         }
     }
+}
+
+bool scene_gameplay::damage(ember::database::ent_id eid, component::character_ref& cref, int dmg) {
+    cref.c->health -= dmg;
+    if (cref.c->health <= 0) {
+        cref.c->health = 0;
+        if (cref.player_controlled) {
+            // Dangerous cast
+            auto& player_char = reinterpret_cast<player_character_card&>(*cref.c);
+            player_char.deployed = false;
+            player_char.dead = true;
+
+            for (auto& c : available_movement_cards) {
+                if (c.data == cref.m) {
+                    c.visible = true;
+                }
+            }
+        }
+        tile_at(*cref.board_pos).occupant = std::nullopt;
+        entities.destroy_entity(eid);
+        return true;
+    }
+    return false;
 }

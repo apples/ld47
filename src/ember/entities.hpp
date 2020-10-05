@@ -83,16 +83,10 @@ public:
     }
 
     template <typename Com>
-    int count_components() const {
-        auto guid = ginseng::_detail::get_type_guid<Com>();
-
-        auto iter = com_counts.find(guid);
-
-        if (iter != com_counts.end()) {
-            return iter->second;
-        } else {
-            return 0;
-        }
+    int count_components() {
+        int r = 0;
+        visit([&](const Com&){ ++r; });
+        return r;
     }
 
 private:

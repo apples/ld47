@@ -8,6 +8,7 @@ return function(props)
     elseif (props.turn == 2) then turn_name = 'AUTOPLAYER'
     elseif (props.turn == 3) then turn_name = 'ENEMY_SPAWN'
     elseif (props.turn == 4) then turn_name = 'ENEMY_MOVE'
+    elseif (props.turn == 5) then turn_name = 'ATTACK'
     end
 
     return vdom.create_element('widget', { width = '100%', height = '100%' },
