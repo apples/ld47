@@ -151,6 +151,12 @@ engine::engine(const config::config& config) {
         return msdf_font("data/fonts/"+fontname+".ttf");
     };
 
+    sound_cache = [](const std::string& name) {
+        auto wav = std::make_shared<SoLoud::Wav>();;
+        wav->load(("data/sfx/" + name + ".wav").c_str());
+        return wav;
+    };
+
     music_cache = [](const std::string& name) {
         auto wav = std::make_shared<SoLoud::WavStream>();;
         wav->load(("data/bgm/" + name + ".ogg").c_str());

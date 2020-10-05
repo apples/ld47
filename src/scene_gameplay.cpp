@@ -154,6 +154,7 @@ void scene_gameplay::init() {
     // Call the "init" function in the "data/scripts/scenes/gameplay.lua" script, with no params.
     engine->call_script("scenes.gameplay", "init");
 
+    engine->soloud.stopAll();
     engine->soloud.play(*engine->music_cache.get("gameplay"));
 }
 
@@ -647,6 +648,7 @@ auto scene_gameplay::handle_game_input(const SDL_Event& event) -> bool {
                         sref->inset = {0.15, 0.15};
                         sref->frames = {0};
                         player.deployed = true;
+                        engine->soloud.play(*engine->sound_cache.get("catdstack"));
                         next_turn();
                         break;
                     }
@@ -793,6 +795,7 @@ void scene_gameplay::move_units(bool player_controlled) {
         if (next_tile.occupant) {
             if (auto ocref = entities.get_component<component::character_ref*>(*next_tile.occupant)) {
                 if (ocref->player_controlled != u.cref->player_controlled) {
+                    engine->soloud.play(*engine->sound_cache.get("attack1"));
                     if (!damage(*next_tile.occupant, *ocref, u.cref->c->power)) {
                         entities.add_component(
                             u.eid,
@@ -876,6 +879,7 @@ void scene_gameplay::do_attacks(bool player_controlled) {
 
             if (offs.attack) {
                 // attack
+                engine->soloud.play(*engine->sound_cache.get("attack2"));
                 for (auto& pattern : cref.c->attack_patterns) {
                     auto r = cref.board_pos->y + pattern.y;
                     auto c = cref.board_pos->x + pattern.x;
