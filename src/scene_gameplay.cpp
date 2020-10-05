@@ -1,5 +1,6 @@
 #include "scene_gameplay.hpp"
 
+#include "scene_lose.hpp"
 #include "scene_mainmenu.hpp"
 #include "components.hpp"
 #include "meshes.hpp"
@@ -154,6 +155,7 @@ void scene_gameplay::init() {
     // Call the "init" function in the "data/scripts/scenes/gameplay.lua" script, with no params.
     engine->call_script("scenes.gameplay", "init");
 
+    engine->soloud.stopAll();
     engine->soloud.play(*engine->music_cache.get("gameplay"));
 }
 
@@ -232,6 +234,18 @@ void scene_gameplay::tick(float delta) {
 
     // Update UI props
     gui_state["turn"] = int(current_turn);
+
+    // Check lose
+    bool lost = true;
+    for (auto& c : player_characters) {
+        if (!c.dead) {
+            lost = false;
+            break;
+        }
+    }
+    if (lost) {
+        engine->queue_transition<scene_lose>();
+    }
 }
 
 // Render function
@@ -647,6 +661,7 @@ auto scene_gameplay::handle_game_input(const SDL_Event& event) -> bool {
                         sref->inset = {0.15, 0.15};
                         sref->frames = {0};
                         player.deployed = true;
+                        engine->soloud.play(*engine->sound_cache.get("cardstack"));
                         next_turn();
                         break;
                     }
@@ -799,6 +814,7 @@ void scene_gameplay::move_units(bool player_controlled) {
         if (next_tile.occupant) {
             if (auto ocref = entities.get_component<component::character_ref*>(*next_tile.occupant)) {
                 if (ocref->player_controlled != u.cref->player_controlled) {
+                    engine->soloud.play(*engine->sound_cache.get("attack1"));
                     if (!damage(*next_tile.occupant, *ocref, u.cref->c->power)) {
                         entities.add_component(
                             u.eid,
@@ -849,14 +865,19 @@ void scene_gameplay::move_units(bool player_controlled) {
             0.25,
         });
 
+        u.cref->did_move = true;
+
         return true;
     };
 
     // Initial moves
     entities.visit([&](ember::database::ent_id eid, component::character_ref& cref, component::sprite& sref) {
-        if (cref.player_controlled == player_controlled && cref.a == component::character_ref::PLAY) {
-            if (!try_move({eid, &cref, &sref})) {
-                deferred.push_back({eid, &cref, &sref});
+        if (cref.player_controlled == player_controlled) {
+            cref.did_move = false;
+            if (cref.a == component::character_ref::PLAY) {
+                if (!try_move({eid, &cref, &sref})) {
+                    deferred.push_back({eid, &cref, &sref});
+                }
             }
         }
     });
@@ -883,8 +904,9 @@ void scene_gameplay::do_attacks(bool player_controlled) {
         if (cref.player_controlled == player_controlled && cref.board_pos) {
             auto offs = cref.m->movements[cref.move_index];
 
-            if (offs.attack) {
+            if (offs.attack && cref.did_move) {
                 // attack
+                engine->soloud.play(*engine->sound_cache.get("attack2"));
                 for (auto& pattern : cref.c->attack_patterns) {
                     auto r = cref.board_pos->y + pattern.y;
                     auto c = cref.board_pos->x + pattern.x;

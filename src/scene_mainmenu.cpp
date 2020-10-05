@@ -10,7 +10,10 @@ scene_mainmenu::scene_mainmenu(ember::engine& engine, ember::scene* prev)
     gui_state["start_game"] = [this]{ start_game(); };
 }
 
-void scene_mainmenu::init() {}
+void scene_mainmenu::init() {
+    engine->soloud.stopAll();
+    engine->soloud.play(*engine->music_cache.get("mainmenu"));
+}
 
 void scene_mainmenu::tick(float delta) {}
 
