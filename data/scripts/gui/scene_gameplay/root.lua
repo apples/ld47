@@ -46,10 +46,10 @@ return function(props)
         vdom.create_element(
             'panel',
             {
-                halign='left',
-                valign='top',
-                top=200,
-                left = 20,
+                halign='right',
+                valign='bottom',
+                bottom=40,
+                left = 30,
                 width = '10%',
                 height = '20%',
                 texture = 'hourglass',
