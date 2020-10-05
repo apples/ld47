@@ -50,7 +50,8 @@ scene_gameplay::scene_gameplay(ember::engine& engine, ember::scene* prev)
       player_start_point{1, 0},
       rng{std::random_device{}()},
       enemies_spawned(0),
-      turn_count(0) {
+      turn_count(0),
+      dagrons_defeated(0) {
     camera.height = 9; // Height of the camera viewport in world units
     camera.aspect_ratio = 16.f/9.f;
     camera.pos = {-camera.height/2.f * camera.aspect_ratio, -camera.height/2.f, -50};
@@ -234,6 +235,10 @@ void scene_gameplay::tick(float delta) {
             if (entities.count_components<component::locomotion>() == 0) {
                 next_turn(true);
             }
+            break;
+        case turn::SUMMON:
+        case turn::SET_ACTIONS:
+        case turn::ENEMY_SPAWN:
             break;
     }
 
@@ -1144,6 +1149,9 @@ bool scene_gameplay::damage(ember::database::ent_id eid, component::character_re
                     c.visible = true;
                 }
             }
+        }
+        if (cref.c->portrait == "dagron") {
+            ++dagrons_defeated;
         }
         tile_at(*cref.board_pos).occupant = std::nullopt;
         entities.destroy_entity(eid);

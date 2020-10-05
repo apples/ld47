@@ -1,6 +1,7 @@
 #include "scene_lose.hpp"
 
 #include "scene_mainmenu.hpp"
+#include "scene_gameplay.hpp"
 
 #include "ember/engine.hpp"
 #include "ember/vdom.hpp"
@@ -8,6 +9,13 @@
 scene_lose::scene_lose(ember::engine& engine, ember::scene* prev)
     : scene(engine), gui_state{engine.lua.create_table()} {
     gui_state["goto_menu"] = [this]{ goto_menu(); };
+
+    if (auto gameplay = dynamic_cast<scene_gameplay*>(prev)) {
+        auto [e, t, d] = gameplay->get_stats();
+        gui_state["enemies_spawned"] = e;
+        gui_state["turn_count"] = t;
+        gui_state["dagrons_defeated"] = d;
+    }
 }
 
 void scene_lose::init() {
