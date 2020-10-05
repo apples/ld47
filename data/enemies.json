@@ -6,6 +6,7 @@
         "attack_pattern": [
             { "x": 0, "y": -1 }
         ],
+        "random_weight": 3,
         "moves": [
             "Goblin1",
             "Goblin2"
@@ -19,9 +20,25 @@
             { "x": 1, "y": -1 },
             { "x": -1, "y": -1 }
         ],
+        "random_weight": 1,
         "moves": [
             "Ghost1",
             "Ghost2"
+        ]
+    },
+    {
+        "max_health": 3,
+        "power": 1,
+        "portrait": "dagron",
+        "attack_pattern": [
+            { "x": 0, "y": -1 },
+            { "x": 0, "y": -2 },
+            { "x": 0, "y": -3 }
+        ],
+        "random_weight": 0,
+        "moves": [
+            "Boss1",
+            "Boss2"
         ]
     }
 ]
