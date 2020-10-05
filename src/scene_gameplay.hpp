@@ -57,7 +57,8 @@ enum class turn {
     AUTOPLAYER,
     ENEMY_SPAWN,
     ENEMY_MOVE,
-    ATTACK
+    ATTACK,
+    RETURN
 };
 
 struct spawn_result {
@@ -91,6 +92,8 @@ public:
     void enter_turn(turn t);
 
     void do_attacks(bool player_controlled);
+
+    void return_units();
     
     void spawn_enemy();
 

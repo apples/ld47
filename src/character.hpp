@@ -14,4 +14,5 @@ struct character {
     int power;
     std::string portrait;
     std::vector<attack_pattern> attack_patterns;
+    bool returning;
 };
