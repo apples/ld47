@@ -131,4 +131,5 @@ private:
     std::mt19937 rng;
 
     int enemies_spawned;
+    int turn_count;
 };
