@@ -41,6 +41,20 @@ return function(props)
                 color = '#fff'
             }
         ),
-        explanation
+        explanation,
+        --vdom.create_element('panel', { width = '100%', height = '100%', texture = 'background' }
+        vdom.create_element(
+            'panel',
+            {
+                halign='left',
+                valign='top',
+                top=200,
+                left = 20,
+                width = '10%',
+                height = '20%',
+                texture = 'hourglass',
+                on_click = props.hourglass
+            }
+        )
     )
 end

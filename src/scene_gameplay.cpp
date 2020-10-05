@@ -56,6 +56,8 @@ scene_gameplay::scene_gameplay(ember::engine& engine, ember::scene* prev)
 
     board_mesh = make_board_mesh(4, 3, board_tile_size, {0, .25}, {.25, 0});
 
+    gui_state["hourglass"] = [this]{ next_turn(); };
+
     // Load player characters
     {
         auto j = nlohmann::json{};
