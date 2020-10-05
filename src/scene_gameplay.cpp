@@ -1,5 +1,6 @@
 #include "scene_gameplay.hpp"
 
+#include "scene_lose.hpp"
 #include "scene_mainmenu.hpp"
 #include "components.hpp"
 #include "meshes.hpp"
@@ -233,6 +234,18 @@ void scene_gameplay::tick(float delta) {
 
     // Update UI props
     gui_state["turn"] = int(current_turn);
+
+    // Check lose
+    bool lost = true;
+    for (auto& c : player_characters) {
+        if (!c.dead) {
+            lost = false;
+            break;
+        }
+    }
+    if (lost) {
+        engine->queue_transition<scene_lose>();
+    }
 }
 
 // Render function
@@ -648,7 +661,7 @@ auto scene_gameplay::handle_game_input(const SDL_Event& event) -> bool {
                         sref->inset = {0.15, 0.15};
                         sref->frames = {0};
                         player.deployed = true;
-                        engine->soloud.play(*engine->sound_cache.get("catdstack"));
+                        engine->soloud.play(*engine->sound_cache.get("cardstack"));
                         next_turn();
                         break;
                     }
