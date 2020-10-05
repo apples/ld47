@@ -1094,7 +1094,7 @@ void scene_gameplay::spawn_enemy() {
     });
 
     // Mark incoming
-    if (enemy_count < (1 + turn_count / 7)) {
+    if (enemy_count < (1 + turn_count / 28)) {
         auto i = 0;
         if (enemies_spawned % 7 < 6) {
             auto tweight = 0;
