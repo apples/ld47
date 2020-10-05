@@ -35,6 +35,7 @@ REFLECT(transform, (pos)(rot)(scl))
 struct sprite {
     std::string texture;
     glm::vec2 size = {1, 1};
+    glm::vec2 inset = {0, 0};
     std::vector<int> frames;
     float time = 0;
 };

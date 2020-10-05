@@ -436,10 +436,10 @@ void scene_gameplay::render() {
         // Calculate UV matrix for rendering the correct sprite.
         auto cols = int(1 / sprite.size.x);
         auto frame = sprite.frames[int(sprite.time * 12) % sprite.frames.size()];
-        auto uvoffset = glm::vec2{frame % cols, frame / cols} * sprite.size;
+        auto uvoffset = glm::vec2{frame % cols, frame / cols} * sprite.size + sprite.inset * sprite.size;
         auto uvmat = glm::mat3{1.f};
         uvmat = glm::translate(uvmat, uvoffset);
-        uvmat = glm::scale(uvmat, sprite.size);
+        uvmat = glm::scale(uvmat, sprite.size - 2.f * sprite.inset * sprite.size);
 
         // Set matrix uniforms.
         engine->basic_shader.set_uvmat(uvmat);
@@ -595,7 +595,9 @@ auto scene_gameplay::handle_game_input(const SDL_Event& event) -> bool {
                         cref->c = &player.base;
                         cref->m = card.data;
                         cref->player_controlled = true;
-                        sref->texture = cref->c->portrait;
+                        sref->texture = cref->c->portrait + "_sprite";
+                        sref->size = {0.5, 0.5};
+                        sref->inset = {0.15, 0.15};
                         sref->frames = {0};
                         player.deployed = true;
                         next_turn();
@@ -717,6 +719,7 @@ void scene_gameplay::move_units(bool player_controlled) {
     struct unit {
         ember::database::ent_id eid;
         component::character_ref* cref;
+        component::sprite* sref;
     };
 
     // Deferred units will repeatedly try to move until they succeed or a deadlock occurs
@@ -772,10 +775,26 @@ void scene_gameplay::move_units(bool player_controlled) {
         }
 
         // Actually move the unit
+        auto d = next_tile.center - cur_tile.center;
+
         cur_tile.occupant = std::nullopt;
         next_tile.occupant = u.eid;
         u.cref->board_pos = next_pos;
         u.cref->move_index = next_index;
+
+        if (std::abs(d.x) > std::abs(d.y)) {
+            if (d.x > 0) {
+                u.sref->frames = {1};
+            } else {
+                u.sref->frames = {2};
+            }
+        } else {
+            if (d.y > 0) {
+                u.sref->frames = {0};
+            } else {
+                u.sref->frames = {3};
+            }
+        }
 
         entities.add_component(u.eid, component::locomotion{
             {next_tile.center - glm::vec2{0.5, 0.5}, 1},
@@ -786,10 +805,10 @@ void scene_gameplay::move_units(bool player_controlled) {
     };
 
     // Initial moves
-    entities.visit([&](ember::database::ent_id eid, component::character_ref& cref) {
+    entities.visit([&](ember::database::ent_id eid, component::character_ref& cref, component::sprite& sref) {
         if (cref.player_controlled == player_controlled && cref.a == component::character_ref::PLAY) {
-            if (!try_move({eid, &cref})) {
-                deferred.push_back({eid, &cref});
+            if (!try_move({eid, &cref, &sref})) {
+                deferred.push_back({eid, &cref, &sref});
             }
         }
     });
@@ -931,8 +950,10 @@ void scene_gameplay::spawn_enemy() {
                 cref->c = &entities.get_component_by_id<character>(cid);
                 cref->m = &enemy_movement_cards[tile.spawn_move_id];
                 cref->player_controlled = false;
-                sref->texture = e.base.portrait;
-                sref->frames = {0};
+                sref->texture = e.base.portrait + "_sprite";
+                sref->frames = {3};
+                sref->size = {0.5, 0.5};
+                sref->inset = {0.15, 0.15};
 
                 tile.enemy_spawning = false;
             }

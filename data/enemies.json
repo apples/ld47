@@ -2,7 +2,7 @@
     {
         "max_health": 1,
         "power": 1,
-        "portrait": "goblin_down",
+        "portrait": "goblin",
         "attack_pattern": [
             { "x": 0, "y": -1 }
         ],

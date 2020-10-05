@@ -2,7 +2,7 @@
     {
         "max_health": 1,
         "power": 1,
-        "portrait": "kagami",
+        "portrait": "huntress",
         "attack_pattern": [
             { "x": -1, "y": 0 },
             { "x": 1, "y": 0 },
@@ -13,7 +13,7 @@
     {
         "max_health": 2,
         "power": 1,
-        "portrait": "kigima",
+        "portrait": "magi",
         "attack_pattern": [
             { "x": -1, "y": -1 },
             { "x": 1, "y": 1 },
@@ -24,7 +24,7 @@
     {
         "max_health": 1,
         "power": 1,
-        "portrait": "kegemo",
+        "portrait": "barbarian",
         "attack_pattern": [
             { "x": 1, "y": 1 },
             { "x": 0, "y": 1 },
