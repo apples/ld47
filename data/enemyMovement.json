@@ -1,33 +1,15 @@
 [
 	{
-        "name": "Basic",
+        "name": "Goblin1",
         "movements": [
             { "x": -1, "y": 3, "attack": false },
             { "x": 0, "y": -1, "attack": false },
-            { "x": 2, "y": -1, "attack": false },
+            { "x": 1, "y": -1, "attack": false },
             { "x": -1, "y": -1, "attack": false }
         ]
     },
-	{
-        "name": "Advanced",
-        "movements": [
-            { "x": -1, "y": 3, "attack": false },
-            { "x": 1, "y": -0, "attack": false },
-            { "x": 1, "y": -1, "attack": false },
-            { "x": -1, "y": -2, "attack": false }
-        ]
-    },
-	{
-        "name": "Boss",
-        "movements": [
-            { "x": 0, "y": 3, "attack": false },
-            { "x": 1, "y": 0, "attack": false },
-            { "x": -1, "y": -1, "attack": false },
-            { "x": 0, "y": -2, "attack": false }
-        ]
-    },
     {
-        "name": "Basic2",
+        "name": "Goblin2",
         "movements": [
             { "x": 1, "y": 3, "attack": false },
             { "x": 0, "y": -1, "attack": false },
@@ -36,12 +18,30 @@
         ]
     },
 	{
-        "name": "Advanced2",
+        "name": "Ghost1",
+        "movements": [
+            { "x": -1, "y": 3, "attack": false },
+            { "x": 1, "y": 0, "attack": false },
+            { "x": 1, "y": -1, "attack": false },
+            { "x": -1, "y": -2, "attack": false }
+        ]
+    },
+	{
+        "name": "Ghost2",
         "movements": [
             { "x": 1, "y": 3, "attack": false },
-            { "x": 0, "y": 0, "attack": false },
-            { "x": -2, "y": -1, "attack": false },
+            { "x": -1, "y": 0, "attack": false },
+            { "x": -1, "y": -1, "attack": false },
             { "x": 1, "y": -2, "attack": false }
+        ]
+    },
+	{
+        "name": "Boss1",
+        "movements": [
+            { "x": 0, "y": 3, "attack": false },
+            { "x": 1, "y": 0, "attack": false },
+            { "x": -1, "y": -1, "attack": false },
+            { "x": 0, "y": -2, "attack": false }
         ]
     },
 	{

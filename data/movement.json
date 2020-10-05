@@ -38,8 +38,8 @@
 	{
         "name": "Kinky",
         "movements": [
-            { "x": 0, "y": 0, "attack": false },
-            { "x": -1, "y": 1, "attack": false },
+            { "x": 1, "y": 0, "attack": false },
+            { "x": -2, "y": 1, "attack": false },
             { "x": 1, "y": 2, "attack": false },
             { "x": 1, "y": -1, "attack": true }
         ]
