@@ -35,7 +35,7 @@
     {
         "max_health": 2,
         "power": 1,
-        "portrait": "kogamu",
+        "portrait": "catburgler",
         "attack_pattern": [
             { "x": -1, "y": -1 },
             { "x": -2, "y": -2 },

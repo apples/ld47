@@ -13,4 +13,5 @@ node_modules
 # Temporary files
 *.blend[0-9]
 *.kra[~]
+*.kra-autosave.kra
 *.swp
