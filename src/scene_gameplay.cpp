@@ -49,7 +49,9 @@ scene_gameplay::scene_gameplay(ember::engine& engine, ember::scene* prev)
       current_turn(turn::SUMMON),
       player_start_point{1, 0},
       rng{std::random_device{}()},
-      enemies_spawned(0) {
+      enemies_spawned(0),
+      turn_count(0),
+      dagrons_defeated(0) {
     camera.height = 9; // Height of the camera viewport in world units
     camera.aspect_ratio = 16.f/9.f;
     camera.pos = {-camera.height/2.f * camera.aspect_ratio, -camera.height/2.f, -50};
@@ -230,9 +232,15 @@ void scene_gameplay::tick(float delta) {
         case turn::AUTOPLAYER:
         case turn::ENEMY_MOVE:
         case turn::ATTACK:
+        case turn::ENEMY_ATTACK:
+        case turn::RETURN:
             if (entities.count_components<component::locomotion>() == 0) {
                 next_turn(true);
             }
+            break;
+        case turn::SUMMON:
+        case turn::SET_ACTIONS:
+        case turn::ENEMY_SPAWN:
             break;
     }
 
@@ -670,6 +678,7 @@ auto scene_gameplay::handle_game_input(const SDL_Event& event) -> bool {
                         cref->c = &player.base;
                         cref->m = card.data;
                         cref->player_controlled = true;
+                        cref->did_move = true;
                         sref->texture = cref->c->portrait + "_sprite";
                         sref->size = {0.5, 0.5};
                         sref->inset = {0.15, 0.15};
@@ -752,6 +761,7 @@ void scene_gameplay::enter_turn(turn t) {
     current_turn = t;
     switch (current_turn) {
         case turn::SET_ACTIONS:
+            ++turn_count;
             break;
         case turn::AUTOPLAYER:
             move_units(true);
@@ -1084,7 +1094,7 @@ void scene_gameplay::spawn_enemy() {
     });
 
     // Mark incoming
-    if (enemy_count < 4) {
+    if (enemy_count < (1 + turn_count / 7)) {
         auto i = 0;
         if (enemies_spawned % 7 < 6) {
             auto tweight = 0;
@@ -1141,6 +1151,9 @@ bool scene_gameplay::damage(ember::database::ent_id eid, component::character_re
                     c.visible = true;
                 }
             }
+        }
+        if (cref.c->portrait == "dagron") {
+            ++dagrons_defeated;
         }
         tile_at(*cref.board_pos).occupant = std::nullopt;
         entities.destroy_entity(eid);

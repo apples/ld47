@@ -101,6 +101,14 @@ public:
 
     bool damage(ember::database::ent_id eid, component::character_ref& cref, int dmg);
 
+    struct stats {
+        int enemies_spawned;
+        int turn_count;
+        int dagrons_defeated;
+    };
+
+    auto get_stats() const { return stats{ enemies_spawned, turn_count, dagrons_defeated }; };
+
 private:
     ember::camera::orthographic camera;
     ember::database entities;
@@ -131,4 +139,6 @@ private:
     std::mt19937 rng;
 
     int enemies_spawned;
+    int turn_count;
+    int dagrons_defeated;
 };
