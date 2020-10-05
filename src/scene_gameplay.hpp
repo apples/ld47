@@ -78,6 +78,8 @@ public:
 
     board_tile& tile_at(int r, int c);
 
+    board_tile& tile_at(glm::ivec2 v) { return tile_at(v.y, v.x); };
+
     void next_turn(bool force = false);
 
     auto spawn_entity(int r, int c) -> spawn_result;
@@ -88,7 +90,7 @@ public:
 
     void enter_turn(turn t);
 
-    void player_attacks();
+    void do_attacks(bool player_controlled);
     
     void spawn_enemy();
 

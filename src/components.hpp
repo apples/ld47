@@ -67,6 +67,7 @@ struct locomotion {
     float duration = 0;
     std::optional<glm::vec3> return_target = std::nullopt;
     float return_duration = 0;
+    bool bring_me_peace = false;
 };
 REFLECT(locomotion, (target)(duration))
 

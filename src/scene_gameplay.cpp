@@ -180,8 +180,12 @@ void scene_gameplay::tick(float delta) {
 
             if (loco.duration <= 0) {
                 if (!loco.return_target) {
-                    tform.pos = loco.target;
-                    entities.remove_component<component::locomotion>(eid);
+                    if (loco.bring_me_peace) {
+                        entities.destroy_entity(eid);
+                    } else {
+                        tform.pos = loco.target;
+                        entities.remove_component<component::locomotion>(eid);
+                    }
                 } else {
                     loco.return_duration += loco.duration;
                 }
@@ -194,8 +198,12 @@ void scene_gameplay::tick(float delta) {
             loco.return_duration -= delta;
 
             if (loco.return_duration <= 0) {
-                tform.pos = *loco.return_target;
-                entities.remove_component<component::locomotion>(eid);
+                if (loco.bring_me_peace) {
+                    entities.destroy_entity(eid);
+                } else {
+                    tform.pos = *loco.return_target;
+                    entities.remove_component<component::locomotion>(eid);
+                }
             }
         }
     });
@@ -697,7 +705,7 @@ void scene_gameplay::enter_turn(turn t) {
             }
             break;
         case turn::ATTACK:
-            player_attacks();
+            do_attacks(true);
             break;
         case turn::ENEMY_MOVE:
             enemy_ai();
@@ -855,45 +863,52 @@ void scene_gameplay::move_units(bool player_controlled) {
     }
 }
 
-void scene_gameplay::player_attacks() {
-
+void scene_gameplay::do_attacks(bool player_controlled) {
     entities.visit([&](ember::database::ent_id eid, component::character_ref& cref){
-        for(movement pos : cref.m->movements) {
-            auto this_index = cref.move_index % cref.m->movements.size();
-            auto offs = cref.m->movements[this_index];
+        if (cref.player_controlled == player_controlled) {
+            for(movement pos : cref.m->movements) {
+                auto offs = cref.m->movements[cref.move_index];
 
-            if(offs.attack){
-                //attack
-                for(attack_pattern pattern : cref.c->attack_patterns) {
-                    if(offs.y + pattern.y < 4 ||
-                        offs.y + pattern.y > -1 ||
-                        offs.x + pattern.x < 3 ||
-                        offs.x + pattern.x > -1) {
+                if(offs.attack){
+                    //attack
+                    for(auto& pattern : cref.c->attack_patterns) {
+                        auto r = offs.y + pattern.y;
+                        auto c = offs.x + pattern.x;
+                        if (r < num_rows && r >= 0 && c < num_cols && c >= 0) {
+                            auto tile = tile_at(offs.y + pattern.y, offs.x + pattern.x);
+                            if (tile.occupant) {
+                                if (auto ocref = entities.get_component<component::character_ref*>(*tile.occupant)) {
+                                    if (ocref->player_controlled != cref.player_controlled) {
+                                        ocref->c->health -= cref.c->power;
+                                        if (ocref->c->health <= 0) {
+                                            ocref->c->health = 0;
+                                            if (ocref->player_controlled) {
+                                                // Dangerous cast
+                                                auto& player_char = reinterpret_cast<player_character_card&>(*ocref->c);
+                                                player_char.deployed = false;
+                                                player_char.dead = true;
+                                            }
+                                            entities.destroy_entity(*tile.occupant);
+                                        } else {
+                                            auto atkent = entities.create_entity();
+                                            auto a = tile_at(*cref.board_pos).center - glm::vec2{0.5, 0.5};
+                                            auto b = tile_at(*ocref->board_pos).center - glm::vec2{0.5, 0.5};
 
-                        auto tile = tile_at(offs.y + pattern.y, offs.x + pattern.x);
-                        if (tile.occupant) {
-                            if (auto ocref = entities.get_component<component::character_ref*>(*tile.occupant)) {
-                                if (!ocref->player_controlled && cref.player_controlled) {
-                                    ocref->c->health -= cref.c->power;
-                                    if (ocref->c->health <= 0) {
-                                        ocref->c->health = 0;
-                                        // if (ocref->player_controlled) {
-                                        //     // Dangerous cast
-                                        //     auto& player_char = reinterpret_cast<player_character_card&>(*ocref->c);
-                                        //     player_char.deployed = false;
-                                        //     player_char.dead = true;
-                                        // }
-                                        entities.destroy_entity(*tile.occupant);
+                                            entities.add_component(atkent, component::transform{{{a, 4}}});
+                                            entities.add_component(
+                                                atkent, component::locomotion{{b, 4}, 0.2, std::nullopt, 0, true});
+
+                                            auto s = component::sprite{};
+                                            s.texture = "attack";
+                                            s.frames = {0};
+
+                                            entities.add_component(atkent, s);
+                                        }
                                     } 
-                                    // else {
-                                    //     // TODO animate
-                                    //     return true;
-                                    // }
                                 } 
-                            } 
+                            }
                         }
                     }
-                    
                 }
             }
         }
