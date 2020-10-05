@@ -76,7 +76,7 @@ scene_gameplay::scene_gameplay(ember::engine& engine, ember::scene* prev)
             player_characters.push_back({
                 {mh, mh, power, portrait, std::move(attacks)},
                 {4 + 2 * i, 0},
-                {1.75, 2.5 + (25/256)},
+                {112.f / 64.f, 169.f / 64.f},
                 false,
                 false,
             });
@@ -284,6 +284,11 @@ void scene_gameplay::render() {
         sushi::draw_mesh(sprite_mesh);
     };
 
+    // Render background
+    {
+        draw_sprite({0, 0, -10}, {16, 9}, "background", {0, 0}, {1, 1});
+    }
+
     // Render board
     {
         auto modelmat = glm::mat4(1);
@@ -315,6 +320,9 @@ void scene_gameplay::render() {
 
     // Render character sheets
     {
+        auto card_width_px = 112.f;
+        auto card_height_px = 169.f;
+
         for (auto& c : player_characters) {
             if (c.dead) {
                 engine->basic_shader.set_saturation(0);
@@ -322,7 +330,7 @@ void scene_gameplay::render() {
             }
 
             // Card
-            draw_sprite({c.pos, 1}, c.size, "character_card2", {0, 0}, {7.f/16.f, 85.f/128.f});
+            draw_sprite({c.pos, 1}, c.size, "character_card2", {0, 0}, {card_width_px / 256.f, card_height_px / 256.f});
 
             // Portrait
             if (!c.dead) {
@@ -330,7 +338,8 @@ void scene_gameplay::render() {
                     engine->basic_shader.set_saturation(0);
                     engine->basic_shader.set_tint({0.5, 0.5, 0.5, 0.5});
                 }
-                draw_sprite({c.pos + glm::vec2{0, 1.55}, 2}, {1, 1}, c.base.portrait, {0, 0}, {1, 1});
+                draw_sprite(
+                    {c.pos + glm::vec2{0, (card_height_px - 64.f) / 64.f}, 2}, {1, 1}, c.base.portrait, {0, 0}, {1, 1});
                 if (c.deployed) {
                     engine->basic_shader.set_saturation(1);
                     engine->basic_shader.set_tint({1, 1, 1, 1});
@@ -344,7 +353,7 @@ void scene_gameplay::render() {
                     uv1.y = 0.f;
                 }
                 auto x = 67.f/64.f;
-                auto y = (138.f - 19*i)/64.f;
+                auto y = (card_height_px - 22.f - 19.f*i)/64.f;
                 draw_sprite(
                     {c.pos + glm::vec2{x, y}, 2}, {0.5, 0.5}, "character_card2", uv1, uv1 + glm::vec2{0.125, 0.125});
             }
@@ -353,7 +362,7 @@ void scene_gameplay::render() {
             for (int i = 0; i < c.base.max_health; ++i) {
                 auto uv1 = glm::vec2{0.625f, 0.f};
                 auto x = 87.f/64.f;
-                auto y = (138.f - 19*i)/64.f;
+                auto y = (card_height_px - 22.f - 19.f*i)/64.f;
                 draw_sprite(
                     {c.pos + glm::vec2{x, y}, 2}, {0.5, 0.5}, "character_card2", uv1, uv1 + glm::vec2{0.125, 0.125});
             }
@@ -361,8 +370,8 @@ void scene_gameplay::render() {
             // Attacks
             for (attack_pattern pattern : c.base.attack_patterns) {
                 auto uv1 = glm::vec2{0.5f, 4.f/8.f};
-                auto x = 87.f/64.f;
-                auto y = 38.f/64.f;
+                auto x = (48.f + pattern.x * 21.f)/64.f;
+                auto y = (45.f + pattern.y * 20.f)/64.f;
                 draw_sprite(
                     {c.pos + glm::vec2{x, y}, 2}, {0.5, 0.5}, "character_card2", uv1, uv1 + glm::vec2{0.125, 0.125});
             }
