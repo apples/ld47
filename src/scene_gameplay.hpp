@@ -48,6 +48,7 @@ enum class turn {
     AUTOPLAYER,
     ENEMY_SPAWN,
     ENEMY_MOVE,
+    ATTACK
 };
 
 struct spawn_result {
@@ -77,6 +78,8 @@ public:
     void enemy_ai();
 
     void enter_turn(turn t);
+
+    void player_attacks();
 
 private:
     ember::camera::orthographic camera;

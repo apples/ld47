@@ -6,6 +6,7 @@
 struct movement {
     int x;
     int y;
+    bool attack;
 };
 
 struct movement_card {

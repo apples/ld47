@@ -626,6 +626,9 @@ void scene_gameplay::next_turn(bool force) {
                 c.pickable = false;
             }
             picked_card = nullptr;
+            enter_turn(turn::ATTACK);
+            break;
+        case turn::ATTACK:
             enter_turn(turn::ENEMY_MOVE);
             break;
         case turn::ENEMY_MOVE:
@@ -649,6 +652,9 @@ void scene_gameplay::enter_turn(turn t) {
             for (auto& c : available_movement_cards) {
                 c.pickable = true;
             }
+            break;
+        case turn::ATTACK:
+            player_attacks();
             break;
         case turn::ENEMY_MOVE:
             enemy_ai();
@@ -772,6 +778,51 @@ void scene_gameplay::move_units(bool player_controlled) {
         }
         last_sz = deferred.size();
     }
+}
+
+void scene_gameplay::player_attacks() {
+
+    entities.visit([&](ember::database::ent_id eid, component::character_ref& cref){
+        for(movement pos : cref.m->movements) {
+            auto this_index = cref.move_index % cref.m->movements.size();
+            auto offs = cref.m->movements[this_index];
+
+            if(offs.attack){
+                //attack
+                for(attack_pattern pattern : cref.c->attack_patterns) {
+                    if(offs.y + pattern.y < 4 ||
+                        offs.y + pattern.y > -1 ||
+                        offs.x + pattern.x < 3 ||
+                        offs.x + pattern.x > -1) {
+
+                        auto tile = tile_at(offs.y + pattern.y, offs.x + pattern.x);
+                        if (tile.occupant) {
+                            if (auto ocref = entities.get_component<component::character_ref*>(*tile.occupant)) {
+                                if (!ocref->player_controlled && cref.player_controlled) {
+                                    ocref->c->health -= cref.c->power;
+                                    if (ocref->c->health <= 0) {
+                                        ocref->c->health = 0;
+                                        // if (ocref->player_controlled) {
+                                        //     // Dangerous cast
+                                        //     auto& player_char = reinterpret_cast<player_character_card&>(*ocref->c);
+                                        //     player_char.deployed = false;
+                                        //     player_char.dead = true;
+                                        // }
+                                        entities.destroy_entity(*tile.occupant);
+                                    } 
+                                    // else {
+                                    //     // TODO animate
+                                    //     return true;
+                                    // }
+                                } 
+                            } 
+                        }
+                    }
+                    
+                }
+            }
+        }
+    });
 }
 
 void scene_gameplay::enemy_ai() {
