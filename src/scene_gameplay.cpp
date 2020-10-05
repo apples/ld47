@@ -945,12 +945,8 @@ void scene_gameplay::do_attacks(bool player_controlled) {
 void scene_gameplay::return_units() {
     entities.visit([&](ember::database::ent_id eid, component::character_ref& cref) {
         if (cref.player_controlled) {
-            std::cout << "return hit " << cref.move_index << cref.c->returning << std::endl;
-            //auto offs = cref.m->movements[cref.move_index];
 
             if (cref.move_index == 0 && cref.c->returning) {
-                std::cout << "return hit!" << std::endl;
-                // return
                 auto& player_char = reinterpret_cast<player_character_card&>(*cref.c);
                 player_char.deployed = false;
                 if(cref.c->health < 3){
