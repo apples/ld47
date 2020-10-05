@@ -64,11 +64,19 @@ scene_gameplay::scene_gameplay(ember::engine& engine, ember::scene* prev)
             auto mh = c.value()["max_health"].get<int>();
             auto power = c.value()["power"].get<int>();
             auto portrait = c.value()["portrait"].get<std::string>();
+            auto attacks = new std::vector<attack_pattern>();
+
+            for(auto& p : c.value()["attack_patterns"].items()) {
+                attacks->push_back(attack_pattern{
+                    p.value()["x"].get<int>(),
+                    p.value()["y"].get<int>()
+                });
+            }
 
             player_characters.push_back({
-                {mh, mh, power, portrait},
+                {mh, mh, power, portrait, },
                 {4 + 2 * i, 0},
-                {1.75, 2.5},
+                {1.75, 2.5 + (25/256)},
                 false,
                 false,
             });
@@ -324,7 +332,7 @@ void scene_gameplay::render() {
             }
 
             // Card
-            draw_sprite({c.pos, 1}, c.size, "character_card", {0, 0}, {7.f/16.f, 10.f/16.f});
+            draw_sprite({c.pos, 1}, c.size, "character_card2", {0, 0}, {7.f/16.f, 85.f/128.f});
 
             // Portrait
             if (!c.dead) {
@@ -332,7 +340,7 @@ void scene_gameplay::render() {
                     engine->basic_shader.set_saturation(0);
                     engine->basic_shader.set_tint({0.5, 0.5, 0.5, 0.5});
                 }
-                draw_sprite({c.pos + glm::vec2{0, 1.5}, 2}, {1, 1}, c.base.portrait, {0, 0}, {1, 1});
+                draw_sprite({c.pos + glm::vec2{0, 1.55}, 2}, {1, 1}, c.base.portrait, {0, 0}, {1, 1});
                 if (c.deployed) {
                     engine->basic_shader.set_saturation(1);
                     engine->basic_shader.set_tint({1, 1, 1, 1});
@@ -346,18 +354,28 @@ void scene_gameplay::render() {
                     uv1.y = 0.f;
                 }
                 auto x = 67.f/64.f;
-                auto y = (138.f - 21*i)/64.f;
+                auto y = (138.f - 19*i)/64.f;
                 draw_sprite(
-                    {c.pos + glm::vec2{x, y}, 2}, {0.5, 0.5}, "character_card", uv1, uv1 + glm::vec2{0.125, 0.125});
+                    {c.pos + glm::vec2{x, y}, 2}, {0.5, 0.5}, "character_card2", uv1, uv1 + glm::vec2{0.125, 0.125});
             }
 
             // Power
             for (int i = 0; i < c.base.max_health; ++i) {
                 auto uv1 = glm::vec2{0.625f, 0.f};
                 auto x = 87.f/64.f;
-                auto y = (138.f - 21*i)/64.f;
+                auto y = (138.f - 19*i)/64.f;
                 draw_sprite(
-                    {c.pos + glm::vec2{x, y}, 2}, {0.5, 0.5}, "character_card", uv1, uv1 + glm::vec2{0.125, 0.125});
+                    {c.pos + glm::vec2{x, y}, 2}, {0.5, 0.5}, "character_card2", uv1, uv1 + glm::vec2{0.125, 0.125});
+            }
+
+            // Attacks
+            for (attack_pattern pattern : c.base.attack_patterns) {
+                std::cout << "planting attack paterns" << std::endl;
+                auto uv1 = glm::vec2{0.5f, 4.f/8.f};
+                auto x = 87.f/64.f;
+                auto y = 38.f/64.f;
+                draw_sprite(
+                    {c.pos + glm::vec2{x, y}, 2}, {0.5, 0.5}, "character_card2", uv1, uv1 + glm::vec2{0.125, 0.125});
             }
 
             if (c.dead) {
@@ -388,12 +406,12 @@ void scene_gameplay::render() {
             engine->basic_shader.set_normal_mat(glm::inverseTranspose(view * modelmat));
             engine->basic_shader.set_MVP(projview * modelmat);
 
-            sushi::set_texture(0, *engine->texture_cache.get("character_card"));
+            sushi::set_texture(0, *engine->texture_cache.get("character_card2"));
             sushi::draw_mesh(sprite_mesh);
         };
 
     auto render_movement_card = [&](const glm::vec3& loc, const glm::vec2& size, const movement_card& c) {
-        draw_sprite(loc, size, "character_card", {0.f, 170.f / 256.f}, {65.f / 256.f, 1.f});
+        draw_sprite(loc, size, "character_card2", {0.f, 170.f / 256.f}, {65.f / 256.f, 1.f});
 
         auto pos = loc + glm::vec3{23.f / 64.f, 2.f / 64.f, 1};
         auto offs = glm::vec3{21.f / 64.f, 21.f / 64.f, 0};
@@ -406,7 +424,7 @@ void scene_gameplay::render() {
         for (auto& m : c.movements) {
             pos += offs * glm::vec3{m.x, m.y, 1};
 
-            draw_sprite(pos, {0.5f, 0.5f}, "character_card", uv1, uv1 + uvd);
+            draw_sprite(pos, {0.5f, 0.5f}, "character_card2", uv1, uv1 + uvd);
 
             uv1.y = 0.375f;
 
@@ -491,7 +509,7 @@ void scene_gameplay::render() {
                 draw_sprite(
                     transform.pos + glm::vec3{x, y, 1},
                     {0.5, 0.5},
-                    "character_card",
+                    "character_card2",
                     uv1,
                     uv1 + glm::vec2{0.125, 0.125});
             }
