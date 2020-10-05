@@ -976,7 +976,7 @@ void scene_gameplay::return_units() {
     entities.visit([&](ember::database::ent_id eid, component::character_ref& cref) {
         if (cref.player_controlled) {
 
-            if (cref.move_index == 0 && cref.c->returning) {
+            if (cref.move_index == cref.m->movements.size() - 1 && cref.c->returning) {
                 auto& player_char = reinterpret_cast<player_character_card&>(*cref.c);
                 player_char.deployed = false;
                 if(cref.c->health < 3){
