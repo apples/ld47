@@ -49,6 +49,7 @@ struct player_character_card {
 struct enemy_character {
     character base;
     std::vector<std::string> moves;
+    int weight = 0;
 };
 
 enum class turn {
@@ -57,7 +58,8 @@ enum class turn {
     AUTOPLAYER,
     ENEMY_SPAWN,
     ENEMY_MOVE,
-    ATTACK
+    ATTACK,
+    ENEMY_ATTACK
 };
 
 struct spawn_result {
@@ -124,4 +126,6 @@ private:
     glm::ivec2 player_start_point;
 
     std::mt19937 rng;
+
+    int enemies_spawned;
 };

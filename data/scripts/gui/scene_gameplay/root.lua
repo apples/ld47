@@ -11,6 +11,7 @@ return function(props)
     elseif (props.turn == 3) then turn_name = 'ENEMY_SPAWN'
     elseif (props.turn == 4) then turn_name = 'ENEMY_MOVE'
     elseif (props.turn == 5) then turn_name = 'ATTACK'
+    elseif (props.turn == 6) then turn_name = 'ENEMY_ATTACK'
     end
 
     for i,v in ipairs(explanation) do

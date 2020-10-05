@@ -48,7 +48,8 @@ scene_gameplay::scene_gameplay(ember::engine& engine, ember::scene* prev)
       picked_card(nullptr),
       current_turn(turn::SUMMON),
       player_start_point{1, 0},
-      rng{std::random_device{}()} {
+      rng{std::random_device{}()},
+      enemies_spawned(0) {
     camera.height = 9; // Height of the camera viewport in world units
     camera.aspect_ratio = 16.f/9.f;
     camera.pos = {-camera.height/2.f * camera.aspect_ratio, -camera.height/2.f, -50};
@@ -96,10 +97,21 @@ scene_gameplay::scene_gameplay(ember::engine& engine, ember::scene* prev)
             auto power = c.value()["power"].get<int>();
             auto portrait = c.value()["portrait"].get<std::string>();
             auto moves = c.value()["moves"].get<std::vector<std::string>>();
+            auto weight = c.value()["random_weight"].get<int>();
+
+            auto attacks = std::vector<attack_pattern>();
+
+            for(auto& p : c.value()["attack_pattern"].items()) {
+                attacks.push_back({
+                    p.value()["x"].get<int>(),
+                    p.value()["y"].get<int>()
+                });
+            }
 
             enemy_characters.push_back({
-                {mh, mh, power, portrait},
+                {mh, mh, power, portrait, std::move(attacks)},
                 std::move(moves),
+                weight
             });
         }
     }
@@ -723,6 +735,9 @@ void scene_gameplay::next_turn(bool force) {
             enter_turn(turn::ENEMY_SPAWN);
             break;
         case turn::ENEMY_SPAWN:
+            enter_turn(turn::ENEMY_ATTACK);
+            break;
+        case turn::ENEMY_ATTACK:
             enter_turn(turn::SET_ACTIONS);
             break;
     }
@@ -750,6 +765,9 @@ void scene_gameplay::enter_turn(turn t) {
         case turn::ENEMY_SPAWN:
             spawn_enemy();
             next_turn(true);
+            break;
+        case turn::ENEMY_ATTACK:
+            do_attacks(false);
             break;
     }
 }
@@ -1018,7 +1036,20 @@ void scene_gameplay::spawn_enemy() {
 
     // Mark incoming
     {
-        auto i = std::uniform_int_distribution<>{0, int(enemy_characters.size() - 1)}(rng);
+        auto i = 0;
+        if (enemies_spawned % 7 < 6) {
+            auto tweight = 0;
+            for (auto& c : enemy_characters) {
+                tweight += c.weight;
+            }
+            auto roll = std::uniform_int_distribution<>{0, int(tweight - 1)}(rng);
+            while (roll >= enemy_characters[i].weight) {
+                roll -= enemy_characters[i].weight;
+                ++i;
+            }
+        } else {
+            i = 2;
+        }
         auto& e = enemy_characters[i];
 
         int r;
@@ -1040,6 +1071,8 @@ void scene_gameplay::spawn_enemy() {
             t.enemy_spawning = true;
             t.spawn_enemy_id = i;
             t.spawn_move_id = mi;
+
+            ++enemies_spawned;
         }
     }
 }
