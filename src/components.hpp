@@ -44,8 +44,7 @@ REFLECT(sprite, (texture)(size)(frames)(time))
 struct character_ref {
     enum action {
         PLAY,
-        PAUSE,
-        ATTACK
+        PAUSE
     };
 
     character* c = nullptr;
@@ -54,6 +53,7 @@ struct character_ref {
     action a = PLAY;
     int move_index = 0;
     bool player_controlled = false;
+    bool did_move = false;
 };
 REFLECT(character_ref, (c)(m)(board_pos)(a)(player_controlled))
 

@@ -856,14 +856,19 @@ void scene_gameplay::move_units(bool player_controlled) {
             0.25,
         });
 
+        u.cref->did_move = true;
+
         return true;
     };
 
     // Initial moves
     entities.visit([&](ember::database::ent_id eid, component::character_ref& cref, component::sprite& sref) {
-        if (cref.player_controlled == player_controlled && cref.a == component::character_ref::PLAY) {
-            if (!try_move({eid, &cref, &sref})) {
-                deferred.push_back({eid, &cref, &sref});
+        if (cref.player_controlled == player_controlled) {
+            cref.did_move = false;
+            if (cref.a == component::character_ref::PLAY) {
+                if (!try_move({eid, &cref, &sref})) {
+                    deferred.push_back({eid, &cref, &sref});
+                }
             }
         }
     });
@@ -890,7 +895,7 @@ void scene_gameplay::do_attacks(bool player_controlled) {
         if (cref.player_controlled == player_controlled && cref.board_pos) {
             auto offs = cref.m->movements[cref.move_index];
 
-            if (offs.attack) {
+            if (offs.attack && cref.did_move) {
                 // attack
                 engine->soloud.play(*engine->sound_cache.get("attack2"));
                 for (auto& pattern : cref.c->attack_patterns) {
