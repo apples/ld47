@@ -12,6 +12,7 @@ return function(props)
     elseif (props.turn == 4) then turn_name = 'ENEMY_MOVE'
     elseif (props.turn == 5) then turn_name = 'ATTACK'
     elseif (props.turn == 6) then turn_name = 'ENEMY_ATTACK'
+    elseif (props.turn == 7) then turn_name = 'RETURN'
     end
 
     for i,v in ipairs(explanation) do

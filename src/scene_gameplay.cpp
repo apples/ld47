@@ -76,7 +76,7 @@ scene_gameplay::scene_gameplay(ember::engine& engine, ember::scene* prev)
             }
 
             player_characters.push_back({
-                {mh, mh, power, portrait, std::move(attacks)},
+                {mh, mh, power, portrait, std::move(attacks), false},
                 {4 + 2 * i, 0},
                 {112.f / 64.f, 169.f / 64.f},
                 false,
@@ -729,6 +729,9 @@ void scene_gameplay::next_turn(bool force) {
             enter_turn(turn::ATTACK);
             break;
         case turn::ATTACK:
+            enter_turn(turn::RETURN);
+            break;
+        case turn::RETURN:
             enter_turn(turn::ENEMY_MOVE);
             break;
         case turn::ENEMY_MOVE:
@@ -758,6 +761,9 @@ void scene_gameplay::enter_turn(turn t) {
             break;
         case turn::ATTACK:
             do_attacks(true);
+            break;
+        case turn::RETURN:
+            return_units();
             break;
         case turn::ENEMY_MOVE:
             enemy_ai();
@@ -838,6 +844,9 @@ void scene_gameplay::move_units(bool player_controlled) {
                             });
 
                         return true;
+                    }
+                    else if(u.cref->player_controlled){
+                        u.cref->c->returning = true;
                     }
                 } else {
                     return false;
@@ -938,12 +947,46 @@ void scene_gameplay::do_attacks(bool player_controlled) {
                         if (tile.occupant) {
                             if (auto ocref = entities.get_component<component::character_ref*>(*tile.occupant)) {
                                 if (ocref->player_controlled != cref.player_controlled) {
-                                    damage(*tile.occupant, *ocref, cref.c->power);
+                                    if(damage(*tile.occupant, *ocref, cref.c->power) && cref.player_controlled){
+                                        cref.c->returning = true;
+                                    }
                                 }
                             }
                         }
                     }
                 }
+            }
+        }
+    });
+}
+
+void scene_gameplay::return_units() {
+    entities.visit([&](ember::database::ent_id eid, component::character_ref& cref) {
+        if (cref.player_controlled) {
+            std::cout << "return hit " << cref.move_index << cref.c->returning << std::endl;
+            //auto offs = cref.m->movements[cref.move_index];
+
+            if (cref.move_index == 0 && cref.c->returning) {
+                std::cout << "return hit!" << std::endl;
+                // return
+                auto& player_char = reinterpret_cast<player_character_card&>(*cref.c);
+                player_char.deployed = false;
+                if(cref.c->health < 3){
+                    cref.c->health++;
+                }
+                if(cref.c->max_health < 3){
+                    cref.c->max_health++;
+                }
+                cref.c->returning = false;
+
+                for (auto& c : available_movement_cards) {
+                    if (c.data == cref.m) {
+                        c.visible = true;
+                    }
+                }
+
+                tile_at(*cref.board_pos).occupant = std::nullopt;
+                entities.destroy_entity(eid);
             }
         }
     });
