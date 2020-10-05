@@ -11,6 +11,8 @@
 
 #include <sol.hpp>
 #include <sushi/sushi.hpp>
+#include <soloud.h>
+#include <soloud_wavstream.h>
 
 #include <chrono>
 #include <sstream>
@@ -45,10 +47,12 @@ public:
 
     sol::state lua;
     display_info display;
+    SoLoud::Soloud soloud;
     resource_cache<sushi::mesh_group, std::string> mesh_cache;
     resource_cache<sushi::skeleton, std::string> skeleton_cache;
     resource_cache<sushi::texture_2d, std::string> texture_cache;
     resource_cache<msdf_font, std::string> font_cache;
+    resource_cache<SoLoud::WavStream, std::string> music_cache;
     shaders::basic_shader_program basic_shader;
     shaders::msdf_shader_program msdf_shader;
 

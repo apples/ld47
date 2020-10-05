@@ -154,14 +154,7 @@ void scene_gameplay::init() {
     // Call the "init" function in the "data/scripts/scenes/gameplay.lua" script, with no params.
     engine->call_script("scenes.gameplay", "init");
 
-    // // Spawn test entity
-    // auto [eid, cref, sref] = spawn_entity(0, 0);
-    // cref->c = &player_characters[0].base;
-    // cref->m = available_movement_cards[0].data;
-    // sref->texture = "kagami";
-    // sref->frames = {0};
-    // cref->player_controlled = true;
-
+    engine->soloud.play(*engine->music_cache.get("gameplay"));
 }
 
 // Tick/update function

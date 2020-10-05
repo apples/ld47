@@ -76,6 +76,9 @@ engine::engine(const config::config& config) {
     basic_shader.bind();
     basic_shader.set_s_texture(0);
 
+    // Initialize audio
+    soloud.init();
+
     // Resource caches
 
     mesh_cache = [](const std::string& name) -> sushi::mesh_group {
@@ -148,6 +151,13 @@ engine::engine(const config::config& config) {
         return msdf_font("data/fonts/"+fontname+".ttf");
     };
 
+    music_cache = [](const std::string& name) {
+        auto wav = std::make_shared<SoLoud::WavStream>();;
+        wav->load(("data/bgm/" + name + ".ogg").c_str());
+        wav->setLooping(1);
+        return wav;
+    };
+
     // Init GUI
 
     renderer = sushi_renderer(
@@ -185,6 +195,7 @@ engine::engine(const config::config& config) {
 }
 
 engine::~engine() {
+    soloud.deinit();
     SDL_GL_DeleteContext(glcontext);
     SDL_DestroyWindow(window);
 }
