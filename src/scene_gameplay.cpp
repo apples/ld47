@@ -46,7 +46,8 @@ scene_gameplay::scene_gameplay(ember::engine& engine, ember::scene* prev)
       available_movement_cards(),
       picked_card(nullptr),
       current_turn(turn::SUMMON),
-      player_start_point{1, 0} {
+      player_start_point{1, 0},
+      rng{std::random_device{}()} {
     camera.height = 9; // Height of the camera viewport in world units
     camera.aspect_ratio = 16.f/9.f;
     camera.pos = {-camera.height/2.f * camera.aspect_ratio, -camera.height/2.f, -50};
@@ -73,6 +74,24 @@ scene_gameplay::scene_gameplay(ember::engine& engine, ember::scene* prev)
             });
 
             ++i;
+        }
+    }
+
+    // Load enemy characters
+    {
+        auto j = nlohmann::json{};
+        std::ifstream("data/enemies.json") >> j;
+        
+        for (auto& c : j.items()) {
+            auto mh = c.value()["max_health"].get<int>();
+            auto power = c.value()["power"].get<int>();
+            auto portrait = c.value()["portrait"].get<std::string>();
+            auto moves = c.value()["moves"].get<std::vector<std::string>>();
+
+            enemy_characters.push_back({
+                {mh, mh, power, portrait},
+                std::move(moves),
+            });
         }
     }
 
@@ -135,18 +154,6 @@ void scene_gameplay::init() {
     // sref->frames = {0};
     // cref->player_controlled = true;
 
-    // Spawn test enemy
-    enemy_characters.push_back({1, 1, 1, "goblin_down"});
-
-    auto m = &enemy_movement_cards[0];
-    auto r = player_start_point.y + m->movements[0].y;
-    auto c = player_start_point.x + m->movements[0].x;
-    auto [eid, cref, sref] = spawn_entity(r, c);
-    cref->c = &enemy_characters[0];
-    cref->m = m;
-    sref->texture = "goblin_down";
-    sref->frames = {0};
-    cref->player_controlled = false;
 }
 
 // Tick/update function
@@ -238,20 +245,6 @@ void scene_gameplay::render() {
 
     auto projview = proj * view;
 
-    // Render board
-    {
-        auto modelmat = glm::mat4(1);
-        modelmat = glm::translate(modelmat, {board_pos, 0});
-
-        // Set matrix uniforms.
-        engine->basic_shader.set_uvmat(glm::mat3(1.f));
-        engine->basic_shader.set_normal_mat(glm::inverseTranspose(view * modelmat));
-        engine->basic_shader.set_MVP(projview * modelmat);
-
-        sushi::set_texture(0, *engine->texture_cache.get("board"));
-        sushi::draw_mesh(board_mesh);
-    }
-
     auto draw_sprite = [&](glm::vec3 pos, glm::vec2 size, const std::string& name, glm::vec2 uv1, glm::vec2 uv2) {
         auto modelmat = glm::mat4(1);
         modelmat = glm::translate(modelmat, pos);
@@ -268,19 +261,45 @@ void scene_gameplay::render() {
         sushi::draw_mesh(sprite_mesh);
     };
 
+    // Render board
+    {
+        auto modelmat = glm::mat4(1);
+        modelmat = glm::translate(modelmat, {board_pos, 0});
+
+        // Set matrix uniforms.
+        engine->basic_shader.set_uvmat(glm::mat3(1.f));
+        engine->basic_shader.set_normal_mat(glm::inverseTranspose(view * modelmat));
+        engine->basic_shader.set_MVP(projview * modelmat);
+
+        sushi::set_texture(0, *engine->texture_cache.get("board"));
+        sushi::draw_mesh(board_mesh);
+    }
+
+    // Render board overlays
+    {
+        engine->basic_shader.set_tint({1, 1, 1, 0.5});
+        for (int r = 0; r < num_rows; ++r) {
+            for (int c = 0; c < num_cols; ++c) {
+                auto& t = tile_at(r, c);
+                if (t.enemy_spawning) {
+                    draw_sprite(
+                        glm::vec3{t.center + glm::vec2{-0.5, -0.5}, 5}, {1, 1}, "overlays", {0, 0.25}, {0.25, 0.5});
+                }
+            }
+        }
+        engine->basic_shader.set_tint({1, 1, 1, 1});
+    }
+
     // Render character sheets
     {
         for (auto& c : player_characters) {
-            // Card
             if (c.dead) {
                 engine->basic_shader.set_saturation(0);
                 engine->basic_shader.set_tint({0.5, 0.5, 0.5, 0.5});
             }
+
+            // Card
             draw_sprite({c.pos, 1}, c.size, "character_card", {0, 0}, {7.f/16.f, 10.f/16.f});
-            if (c.dead) {
-                engine->basic_shader.set_saturation(1);
-                engine->basic_shader.set_tint({1, 1, 1, 1});
-            }
 
             // Portrait
             if (!c.dead) {
@@ -314,6 +333,11 @@ void scene_gameplay::render() {
                 auto y = (138.f - 21*i)/64.f;
                 draw_sprite(
                     {c.pos + glm::vec2{x, y}, 2}, {0.5, 0.5}, "character_card", uv1, uv1 + glm::vec2{0.125, 0.125});
+            }
+
+            if (c.dead) {
+                engine->basic_shader.set_saturation(1);
+                engine->basic_shader.set_tint({1, 1, 1, 1});
             }
         }
     }
@@ -522,7 +546,7 @@ auto scene_gameplay::handle_game_input(const SDL_Event& event) -> bool {
         // Check card picking
         if (current_turn == turn::SUMMON) {
             for (auto& c : available_movement_cards) {
-                if (c.pickable && is_in(p, c.pos, c.size)) {
+                if (c.visible && c.pickable && is_in(p, c.pos, c.size)) {
                     picked_card = &c;
                     return true;
                 }
@@ -660,6 +684,7 @@ void scene_gameplay::enter_turn(turn t) {
             enemy_ai();
             break;
         case turn::ENEMY_SPAWN:
+            spawn_enemy();
             next_turn(true);
             break;
     }
@@ -726,6 +751,12 @@ void scene_gameplay::move_units(bool player_controlled) {
                             auto& player_char = reinterpret_cast<player_character_card&>(*ocref->c);
                             player_char.deployed = false;
                             player_char.dead = true;
+
+                            for (auto& c : available_movement_cards) {
+                                if (c.data == ocref->m) {
+                                    c.visible = true;
+                                }
+                            }
                         }
                         entities.destroy_entity(*next_tile.occupant);
                     } else {
@@ -884,4 +915,54 @@ void scene_gameplay::enemy_ai() {
     });
 
     move_units(false);
+}
+
+void scene_gameplay::spawn_enemy() {
+    // Spawn previous incoming
+    for (auto r = 0; r < num_rows; ++r) {
+        for (auto c = 0; c < num_cols; ++c) {
+            auto& tile = tile_at(r, c);
+            if (tile.enemy_spawning && !tile.occupant) {
+                auto i = tile.spawn_enemy_id;
+                auto& e = enemy_characters[i];
+
+                auto [eid, cref, sref] = spawn_entity(r, c);
+                auto cid = entities.add_component(eid, enemy_characters[i].base);
+                cref->c = &entities.get_component_by_id<character>(cid);
+                cref->m = &enemy_movement_cards[tile.spawn_move_id];
+                cref->player_controlled = false;
+                sref->texture = e.base.portrait;
+                sref->frames = {0};
+
+                tile.enemy_spawning = false;
+            }
+        }
+    }
+
+    // Mark incoming
+    {
+        auto i = std::uniform_int_distribution<>{0, int(enemy_characters.size() - 1)}(rng);
+        auto& e = enemy_characters[i];
+
+        int r;
+        int c;
+
+        auto mi = std::uniform_int_distribution<>{0, int(e.moves.size() - 1)}(rng);
+        for (int i = 0; i < enemy_movement_cards.size(); ++i) {
+            auto& m = enemy_movement_cards[i];
+            if (m.name == e.moves[mi]) {
+                r = player_start_point.y + m.movements[0].y;
+                c = player_start_point.x + m.movements[0].x;
+                mi = i;
+                break;
+            }
+        }
+
+        auto& t = tile_at(r, c);
+        if (!t.occupant) {
+            t.enemy_spawning = true;
+            t.spawn_enemy_id = i;
+            t.spawn_move_id = mi;
+        }
+    }
 }
