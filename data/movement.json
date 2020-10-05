@@ -48,8 +48,8 @@
         "name": "Clyde",
         "movements": [
             { "x": 1, "y": 0, "attack": false },
-            { "x": -2, "y": 1, "attack": false },
-            { "x": 1, "y": 1, "attack": true },
+            { "x": -2, "y": 1, "attack": true },
+            { "x": 1, "y": 1, "attack": false },
             { "x": 1, "y": 1, "attack": false }
         ]
     }

@@ -3,9 +3,9 @@
         "name": "Goblin1",
         "movements": [
             { "x": -1, "y": 3, "attack": false },
-            { "x": 0, "y": -1, "attack": false },
             { "x": 1, "y": -1, "attack": false },
-            { "x": -1, "y": -1, "attack": false }
+            { "x": 1, "y": -1, "attack": true },
+            { "x": -1, "y": 0, "attack": false }
         ]
     },
     {
@@ -13,8 +13,8 @@
         "movements": [
             { "x": 1, "y": 3, "attack": false },
             { "x": 0, "y": -1, "attack": false },
-            { "x": -2, "y": -1, "attack": false },
-            { "x": 1, "y": -1, "attack": false }
+            { "x": -1, "y": -1, "attack": true },
+            { "x": -1, "y": 0, "attack": false }
         ]
     },
 	{
@@ -22,7 +22,7 @@
         "movements": [
             { "x": -1, "y": 3, "attack": false },
             { "x": 1, "y": 0, "attack": false },
-            { "x": 1, "y": -1, "attack": false },
+            { "x": 1, "y": -1, "attack": true },
             { "x": -1, "y": -2, "attack": false }
         ]
     },
@@ -30,9 +30,9 @@
         "name": "Ghost2",
         "movements": [
             { "x": 1, "y": 3, "attack": false },
-            { "x": -1, "y": 0, "attack": false },
-            { "x": -1, "y": -1, "attack": false },
-            { "x": 1, "y": -2, "attack": false }
+            { "x": 0, "y": -1, "attack": false },
+            { "x": -2, "y": -1, "attack": false },
+            { "x": 1, "y": 0, "attack": true }
         ]
     },
 	{

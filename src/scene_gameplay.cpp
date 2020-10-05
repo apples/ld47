@@ -1073,8 +1073,16 @@ void scene_gameplay::spawn_enemy() {
         }
     }
 
+    // Count
+    int enemy_count = 0;
+    entities.visit([&](component::character_ref& c) {
+        if (!c.player_controlled) {
+            ++enemy_count;
+        }
+    });
+
     // Mark incoming
-    {
+    if (enemy_count < 4) {
         auto i = 0;
         if (enemies_spawned % 7 < 6) {
             auto tweight = 0;
