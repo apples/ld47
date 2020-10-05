@@ -43,7 +43,7 @@ return function(props)
         ),
         explanation,
         --vdom.create_element('panel', { width = '100%', height = '100%', texture = 'background' }
-        vdom.create_element(
+        props.show_button and vdom.create_element(
             'panel',
             {
                 halign='right',

@@ -59,6 +59,7 @@ scene_gameplay::scene_gameplay(ember::engine& engine, ember::scene* prev)
     board_mesh = make_board_mesh(4, 3, board_tile_size, {0, .25}, {.25, 0});
 
     gui_state["hourglass"] = [this]{ next_turn(); };
+    gui_state["show_button"] = true;
 
     // Load player characters
     {
@@ -762,29 +763,37 @@ void scene_gameplay::enter_turn(turn t) {
     switch (current_turn) {
         case turn::SET_ACTIONS:
             ++turn_count;
+            gui_state["show_button"] = true;
             break;
         case turn::AUTOPLAYER:
+            gui_state["show_button"] = false;
             move_units(true);
             break;
         case turn::SUMMON:
+            gui_state["show_button"] = true;
             for (auto& c : available_movement_cards) {
                 c.pickable = true;
             }
             break;
         case turn::ATTACK:
+            gui_state["show_button"] = false;
             do_attacks(true);
             break;
         case turn::RETURN:
+            gui_state["show_button"] = false;
             return_units();
             break;
         case turn::ENEMY_MOVE:
+            gui_state["show_button"] = false;
             enemy_ai();
             break;
         case turn::ENEMY_SPAWN:
+            gui_state["show_button"] = false;
             spawn_enemy();
             next_turn(true);
             break;
         case turn::ENEMY_ATTACK:
+            gui_state["show_button"] = false;
             do_attacks(false);
             break;
     }
