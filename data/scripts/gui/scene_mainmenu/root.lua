@@ -2,7 +2,7 @@ local vdom = require('vdom')
 
 -- start_game: () => ()
 return function(props)
-    return vdom.create_element('widget', { width = '100%', height = '100%' },
+    return vdom.create_element('widget', { width = '100%', height = '100%', texture = 'background' },
         vdom.create_element(
             'label',
             {

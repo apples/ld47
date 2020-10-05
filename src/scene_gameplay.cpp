@@ -353,7 +353,7 @@ void scene_gameplay::render() {
                     uv1.y = 0.f;
                 }
                 auto x = 67.f/64.f;
-                auto y = (card_height_px - 22.f - 19.f*i)/64.f;
+                auto y = (card_height_px - 22.f - 21.f*i)/64.f;
                 draw_sprite(
                     {c.pos + glm::vec2{x, y}, 2}, {0.5, 0.5}, "character_card2", uv1, uv1 + glm::vec2{0.125, 0.125});
             }
@@ -362,7 +362,7 @@ void scene_gameplay::render() {
             for (int i = 0; i < c.base.max_health; ++i) {
                 auto uv1 = glm::vec2{0.625f, 0.f};
                 auto x = 87.f/64.f;
-                auto y = (card_height_px - 22.f - 19.f*i)/64.f;
+                auto y = (card_height_px - 22.f - 21.f*i)/64.f;
                 draw_sprite(
                     {c.pos + glm::vec2{x, y}, 2}, {0.5, 0.5}, "character_card2", uv1, uv1 + glm::vec2{0.125, 0.125});
             }
